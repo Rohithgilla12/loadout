@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { api, describeApply } from "../lib/api";
 import type { Profile } from "../lib/types";
 import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Select, cx } from "../components/ui";
@@ -167,6 +168,37 @@ function ProfileDetail({
     onError: (e) => toast(String(e), "error"),
   });
 
+  const skippedNote = (skipped: string[]) =>
+    skipped.length
+      ? ` (${skipped.length} local skill${skipped.length === 1 ? "" : "s"} can't travel in a link)`
+      : "";
+
+  const shareLink = useMutation({
+    mutationFn: () => api.profileShare(profile.name),
+    onSuccess: async (s) => {
+      if (!s.share.skills.length) {
+        toast("Nothing shareable yet — local-only skills can't travel in a link", "error");
+        return;
+      }
+      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(s.share))))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+      await openUrl(`https://loadout.gilla.fun/#L=${payload}`);
+      toast(`Opened your shareable loadout${skippedNote(s.skipped_local)}`, "ok");
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
+
+  const copyJson = useMutation({
+    mutationFn: () => api.profileShare(profile.name),
+    onSuccess: async (s) => {
+      await navigator.clipboard.writeText(s.json);
+      toast(`loadout.json copied${skippedNote(s.skipped_local)}`, "ok");
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
+
   const inProfile = useMemo(() => new Set(profile.skills), [profile.skills]);
   const inherited = useMemo(() => {
     if (!profile.extends) return [];
@@ -216,6 +248,12 @@ function ProfileDetail({
               Make base
             </Button>
           )}
+          <Button onClick={() => shareLink.mutate()} title="Open this profile as a shareable link on loadout.gilla.fun">
+            Share…
+          </Button>
+          <Button onClick={() => copyJson.mutate()} title="Copy loadout.json for committing to a repo">
+            Copy loadout.json
+          </Button>
           <Button onClick={() => duplicate.mutate()}>Duplicate</Button>
           <Button variant="danger" onClick={() => del.mutate(profile.name)}>Delete</Button>
         </div>

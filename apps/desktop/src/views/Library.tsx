@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, describeApply } from "../lib/api";
 import type { LibrarySkill } from "../lib/types";
@@ -85,6 +85,20 @@ export function Library() {
 
   const [diff, setDiff] = useState<{ name: string; text: string } | null>(null);
 
+  // Escape: close the diff first, then the inspector
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setDiff((d) => {
+        if (d) return null;
+        setSelectedName(null);
+        return d;
+      });
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   if (library.isLoading) return <Centered><Spinner /></Centered>;
 
   if (!library.data?.length) {
@@ -167,6 +181,24 @@ export function Library() {
               ))}
             </tbody>
           </table>
+          {!rows.length && (
+            <div className="px-6 py-14 text-center text-[13px] text-ink-soft rise-in">
+              {filter === "updates" ? (
+                <>
+                  <div className="font-semibold text-ink mb-1">Everything is up to date</div>
+                  Every pinned skill matches its upstream HEAD. Updates are checked on launch — new
+                  ones show up here with a diff and one-click apply.
+                </>
+              ) : filter === "local" ? (
+                <>
+                  <div className="font-semibold text-ink mb-1">No local skills yet</div>
+                  Create one in Settings, fork a remote skill, or adopt from Doctor.
+                </>
+              ) : (
+                <>Nothing matches “{search}”.</>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -193,6 +225,9 @@ export function Library() {
                 )}
                 <Button variant="danger" onClick={() => remove.mutate(selectedName)} disabled={remove.isPending}>
                   Remove
+                </Button>
+                <Button variant="ghost" onClick={() => setSelectedName(null)} title="Close (Esc)">
+                  ✕
                 </Button>
               </div>
             </div>

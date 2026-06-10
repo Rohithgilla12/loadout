@@ -134,6 +134,12 @@ export interface Overview {
   loadout_root: string;
 }
 
+export interface ProfileShare {
+  json: string;
+  share: { profile: string; skills: Array<{ source: string; skill: string; rev?: string }> };
+  skipped_local: string[];
+}
+
 export interface RegistrySkill {
   source: string;
   skillId: string;

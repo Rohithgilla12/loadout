@@ -8,6 +8,7 @@ import type {
   MigrateSummary,
   Overview,
   Profile,
+  ProfileShare,
   ProjectView,
   RegistrySkill,
   ResolvedSource,
@@ -34,6 +35,7 @@ export const api = {
   duplicateProfile: (name: string, newName: string) =>
     invoke<Profile>("duplicate_profile", { name, newName }),
   deleteProfile: (name: string) => invoke<ApplySummary[]>("delete_profile_cmd", { name }),
+  profileShare: (name: string) => invoke<ProfileShare>("profile_share", { name }),
   setBaseProfile: (name: string | null) => invoke<ApplySummary[]>("set_base_profile", { name }),
 
   // projects

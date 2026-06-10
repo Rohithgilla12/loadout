@@ -107,7 +107,9 @@ export function Builder() {
           <div className="border border-line rounded-lg p-4">
             <div className="text-[13px] font-semibold mb-1">
               Paste a loadout.json{" "}
-              <span className="font-normal text-ink-faint">(File → Export in the app)</span>
+              <span className="font-normal text-ink-faint">
+                (in the app: Profiles → Copy loadout.json — or Share… to land here pre-filled)
+              </span>
             </div>
             <textarea
               rows={4}

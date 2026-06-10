@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getVersion } from "@tauri-apps/api/app";
+import { check, type Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import { api } from "../lib/api";
 import { setThemePref, useThemePref, type ThemePref } from "../lib/theme";
 import { Badge, Button, Input, Mono, SectionLabel, Spinner, cx } from "../components/ui";
@@ -30,6 +33,72 @@ function ThemeToggle() {
   );
 }
 
+function UpdatesSection({ version }: { version: string }) {
+  const toast = useToast();
+  const [checking, setChecking] = useState(false);
+  const [installing, setInstalling] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [update, setUpdate] = useState<Update | null>(null);
+
+  const runCheck = async () => {
+    setChecking(true);
+    try {
+      const u = await check();
+      setUpdate(u);
+      setChecked(true);
+    } catch (e) {
+      toast(`Update check failed: ${e}`, "error");
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <section className="mb-7">
+      <SectionLabel>Updates</SectionLabel>
+      <p className="text-[12.5px] text-ink-soft mb-2">
+        You're on <Mono>{version ? `v${version}` : "…"}</Mono>. Loadout also checks once on
+        launch; updates are signed and served from GitHub Releases — nothing installs without
+        your say-so.
+      </p>
+      {update ? (
+        <div className="max-w-md px-3 py-2.5 rounded-md border border-accent/40 bg-accent-wash/60 text-[12.5px]">
+          <div className="font-semibold">Loadout {update.version} is available</div>
+          {update.body && (
+            <div className="text-ink-soft mt-0.5 whitespace-pre-wrap">{update.body}</div>
+          )}
+          <Button
+            variant="primary"
+            className="mt-2"
+            disabled={installing}
+            onClick={async () => {
+              setInstalling(true);
+              try {
+                await update.downloadAndInstall();
+                await relaunch();
+              } catch (e) {
+                setInstalling(false);
+                toast(String(e), "error");
+              }
+            }}
+          >
+            {installing ? <Spinner /> : "Update & restart"}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2.5">
+          <Button onClick={runCheck} disabled={checking}>
+            {checking ? <Spinner /> : "Check for updates"}
+          </Button>
+          {checked && !checking && (
+            <span className="text-[12.5px] text-ink-faint">You're on the latest version.</span>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function SettingsView() {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -37,6 +106,11 @@ export function SettingsView() {
 
   const [newSkillName, setNewSkillName] = useState("");
   const [newSkillDesc, setNewSkillDesc] = useState("");
+  const [appVersion, setAppVersion] = useState("");
+
+  useEffect(() => {
+    getVersion().then(setAppVersion).catch(() => {});
+  }, []);
 
   const createLocal = useMutation({
     mutationFn: () => api.createLocalSkill(newSkillName.trim(), newSkillDesc.trim()),
@@ -119,10 +193,12 @@ export function SettingsView() {
         </div>
       </section>
 
+      <UpdatesSection version={appVersion} />
+
       <section>
         <SectionLabel>About</SectionLabel>
         <div className="text-[12.5px] text-ink-soft">
-          Loadout v0.1.0 — open source, MIT.{" "}
+          Loadout{appVersion ? ` v${appVersion}` : ""} — open source, MIT.{" "}
           <a
             className="text-accent-deep underline"
             href="https://github.com/Rohithgilla12/loadout"

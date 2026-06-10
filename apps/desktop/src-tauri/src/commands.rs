@@ -329,6 +329,69 @@ pub fn export_loadout_file(profile: String, dest_dir: String) -> Result<String> 
     Ok(dest.to_string_lossy().to_string())
 }
 
+#[derive(Serialize)]
+pub struct ProfileShare {
+    /// loadout.json content (remote skills only — local skills can't travel in a link)
+    pub json: String,
+    /// payload for the loadout.gilla.fun share page (#L= fragment)
+    pub share: LoadoutSharePayload,
+    pub skipped_local: Vec<String>,
+}
+
+#[derive(Serialize)]
+pub struct LoadoutSharePayload {
+    pub profile: String,
+    pub skills: Vec<ShareSkill>,
+}
+
+#[derive(Serialize)]
+pub struct ShareSkill {
+    pub source: String,
+    pub skill: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rev: Option<String>,
+}
+
+/// Everything the UI needs to share a profile: a copyable loadout.json and
+/// the payload for a loadout.gilla.fun share link.
+#[tauri::command]
+pub fn profile_share(name: String) -> Result<ProfileShare> {
+    let lock = state::load_lock()?;
+    let mut skills = vec![];
+    let mut file_skills = vec![];
+    let mut skipped_local = vec![];
+    for skill_name in state::resolve_profile_skills(&name)? {
+        let Some(entry) = lock.skills.get(&skill_name) else { continue };
+        if entry.source == "local" {
+            skipped_local.push(skill_name);
+            continue;
+        }
+        let source = entry.source.trim_start_matches("github.com/").to_string();
+        skills.push(ShareSkill {
+            source: source.clone(),
+            skill: skill_name.clone(),
+            rev: entry.rev.clone(),
+        });
+        file_skills.push(LoadoutFileSkill {
+            source,
+            skill: skill_name,
+            rev: entry.rev.clone(),
+            vendored: None,
+        });
+    }
+    let file = LoadoutFile {
+        schema: Some("https://loadout.gilla.fun/schema/v1.json".into()),
+        profile: name.clone(),
+        extends: vec![],
+        skills: file_skills,
+    };
+    Ok(ProfileShare {
+        json: serde_json::to_string_pretty(&file)?,
+        share: LoadoutSharePayload { profile: name, skills },
+        skipped_local,
+    })
+}
+
 /// Apply a reviewed loadout.json: install everything it declares into a
 /// profile named after it, then assign that profile to the project.
 /// Only ever called after the explicit review screen (F7/F3).
