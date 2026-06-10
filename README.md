@@ -6,6 +6,8 @@ A fast, open-source desktop app for managing the `SKILL.md`-based skills used by
 
 > Working on a TypeScript frontend? Activate the `typescript` profile. Switching to a Go backend? One click swaps the whole skill set — instantly, offline, via symlinks.
 
+If Loadout looks useful, **[⭐ star the repo](https://github.com/Rohithgilla12/loadout)** — it's the main way other people find it.
+
 ![Loadout share page](docs/share.png)
 
 ## Why

@@ -32,7 +32,7 @@ export function Landing() {
             href="https://github.com/Rohithgilla12/loadout"
             className="border border-line-strong rounded px-3 py-1 hover:border-ink-faint font-medium"
           >
-            GitHub ↗
+            ★ Star on GitHub
           </a>
         </nav>
       </header>
@@ -204,7 +204,16 @@ export function Landing() {
       </section>
 
       <footer className="max-w-5xl mx-auto px-6 py-8 flex items-center justify-between text-[12.5px] text-ink-faint">
-        <span>MIT licensed. Built in the open.</span>
+        <span>
+          MIT licensed. Built in the open —{" "}
+          <a
+            className="text-ink-soft hover:text-ink underline underline-offset-2"
+            href="https://github.com/Rohithgilla12/loadout"
+          >
+            star the repo
+          </a>{" "}
+          if Loadout earns a spot in your kit.
+        </span>
         <div className="flex gap-4">
           <a className="hover:text-ink" href="https://github.com/Rohithgilla12/loadout">GitHub</a>
           <a className="hover:text-ink" href="https://skills.sh">skills.sh</a>

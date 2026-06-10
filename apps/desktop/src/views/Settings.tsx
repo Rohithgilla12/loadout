@@ -243,7 +243,8 @@ export function SettingsView() {
       <section>
         <SectionLabel>About</SectionLabel>
         <div className="text-[12.5px] text-ink-soft">
-          Loadout{appVersion ? ` v${appVersion}` : ""} — open source, MIT.{" "}
+          Loadout{appVersion ? ` v${appVersion}` : ""} — open source, MIT. If it earns a spot in
+          your kit, star the repo — that's how other people find it.{" "}
           <a
             className="text-accent-deep underline"
             href="https://github.com/Rohithgilla12/loadout"
