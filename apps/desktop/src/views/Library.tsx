@@ -4,7 +4,7 @@ import { api, describeApply } from "../lib/api";
 import type { LibrarySkill } from "../lib/types";
 import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Sha, Spinner, cx } from "../components/ui";
 import { SkillMarkdown } from "../components/SkillMarkdown";
-import { formatSize } from "../lib/format";
+import { estimateSkillTokens, formatSize, formatTokens } from "../lib/format";
 import { useToast } from "../components/Toast";
 
 export function Library() {
@@ -156,6 +156,7 @@ export function Library() {
                 <th className="px-4 py-2 font-semibold">Skill</th>
                 <th className="px-2 py-2 font-semibold">Source</th>
                 <th className="px-2 py-2 font-semibold">Rev</th>
+                <th className="px-2 py-2 font-semibold text-right" title="Estimated tokens this skill adds to every agent session (name + description injection)">Tok</th>
                 <th className="px-2 py-2 font-semibold">Profiles</th>
                 <th className="px-2 py-2 font-semibold w-20"></th>
               </tr>
@@ -312,6 +313,9 @@ function LibraryRow({
       </td>
       <td className="px-2 py-2">
         <Sha sha={skill.rev} />
+      </td>
+      <td className="px-2 py-2 text-right">
+        <Mono>{formatTokens(estimateSkillTokens(skill.name, skill.description))}</Mono>
       </td>
       <td className="px-2 py-2">
         <div className="flex flex-wrap gap-1">

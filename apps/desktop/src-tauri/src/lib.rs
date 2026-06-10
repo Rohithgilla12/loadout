@@ -7,6 +7,7 @@ mod model;
 mod registry;
 mod state;
 mod store;
+mod tray;
 
 /// Internal APIs re-exported for integration tests only.
 pub mod test_support {
@@ -25,6 +26,27 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .setup(|app| {
+            use tauri::tray::TrayIconBuilder;
+            let mut builder = TrayIconBuilder::with_id(tray::TRAY_ID)
+                .tooltip("Loadout — switch your kit")
+                .show_menu_on_left_click(true)
+                .on_menu_event(|app, event| tray::handle_menu_event(app, event.id().as_ref()));
+            if let Some(icon) = app.default_window_icon() {
+                builder = builder.icon(icon.clone());
+            }
+            builder.build(app)?;
+            tray::rebuild(app.handle());
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            // ambient mode: closing the window hides it; the tray keeps living.
+            // Quit from the tray menu (or Cmd+Q).
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                let _ = window.hide();
+                api.prevent_close();
+            }
+        })
         .invoke_handler(tauri::generate_handler![
             commands::list_library,
             commands::get_skill_detail,
@@ -64,6 +86,7 @@ pub fn run() {
             commands::reapply_all_cmd,
             commands::get_overview,
             commands::save_settings_cmd,
+            commands::refresh_tray,
             commands::registry_leaderboard,
             commands::registry_search,
         ])

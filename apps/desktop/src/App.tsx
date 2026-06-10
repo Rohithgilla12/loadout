@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { listen } from "@tauri-apps/api/event";
 import { api } from "./lib/api";
 import { ToastProvider } from "./components/Toast";
 import { CommandPalette } from "./components/CommandPalette";
@@ -26,6 +27,15 @@ const TABS: Array<{ id: Tab; label: string; key: string }> = [
 export default function App() {
   const [tab, setTab] = useState<Tab>("library");
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // tray-driven switches happen outside React — refetch when the engine says so
+  useEffect(() => {
+    const unlisten = listen("loadout-state-changed", () => queryClient.invalidateQueries());
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, [queryClient]);
   const overview = useQuery({ queryKey: ["overview"], queryFn: api.getOverview });
   const updates = useQuery({
     queryKey: ["updates"],

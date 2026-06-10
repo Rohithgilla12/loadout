@@ -5,6 +5,7 @@ import { api, describeApply } from "../lib/api";
 import type { SlugCheck } from "../lib/types";
 import type { Profile } from "../lib/types";
 import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Select, Spinner, cx } from "../components/ui";
+import { estimateSkillTokens, formatTokens } from "../lib/format";
 import { useToast } from "../components/Toast";
 
 export function Profiles() {
@@ -207,6 +208,22 @@ function ProfileDetail({
     (p) => p.name !== profile.name && !p.extends,
   );
 
+  // the context budget meter: what this kit costs every agent session
+  const tokenCost = useMemo(() => {
+    const byName = new Map((library.data ?? []).map((s) => [s.name, s]));
+    const all = [...new Set([...inherited, ...profile.skills])];
+    let cost = 0;
+    for (const name of all) {
+      const s = byName.get(name);
+      if (s) cost += estimateSkillTokens(s.name, s.description);
+    }
+    const everything = (library.data ?? []).reduce(
+      (n, s) => n + estimateSkillTokens(s.name, s.description),
+      0,
+    );
+    return { cost, everything };
+  }, [library.data, profile.skills, inherited]);
+
   return (
     <div className="flex flex-col h-full rise-in">
       {shareOpen && <ShareDialog profile={profile.name} onClose={() => setShareOpen(false)} />}
@@ -215,6 +232,20 @@ function ProfileDetail({
           <div className="flex items-center gap-2">
             <h2 className="text-[16px] font-semibold tracking-tight">{profile.name}</h2>
             {isBase && <Badge tone="accent">base — applied globally</Badge>}
+            {tokenCost.cost > 0 && (
+              <Badge
+                tone="neutral"
+              >
+                <span title={`Estimated context this kit adds to every agent session. Your whole library would cost ~${formatTokens(tokenCost.everything)}.`}>
+                  ≈ {formatTokens(tokenCost.cost)} tok/session
+                  {tokenCost.everything > 0 && (
+                    <span className="opacity-60">
+                      {" "}· {Math.round((tokenCost.cost / tokenCost.everything) * 100)}% of library
+                    </span>
+                  )}
+                </span>
+              </Badge>
+            )}
           </div>
           <div className="flex items-center gap-2 mt-1 text-[12px] text-ink-soft">
             <span>extends</span>

@@ -18,6 +18,14 @@ pub enum AppError {
     Network(String),
     #[error("conflict: {0}")]
     Conflict(String),
+    #[error("app: {0}")]
+    App(String),
+}
+
+impl From<tauri::Error> for AppError {
+    fn from(e: tauri::Error) -> Self {
+        AppError::App(e.to_string())
+    }
 }
 
 impl Serialize for AppError {

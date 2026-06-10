@@ -956,6 +956,13 @@ pub fn save_settings_cmd(settings: Settings) -> Result<()> {
     state::save_settings(&settings)
 }
 
+/// Called by the frontend after every successful mutation so the tray menu
+/// (profiles, projects, checkmarks) never goes stale.
+#[tauri::command]
+pub fn refresh_tray(app: tauri::AppHandle) {
+    crate::tray::rebuild(&app);
+}
+
 #[tauri::command]
 pub async fn registry_leaderboard(view: String) -> Result<Vec<registry::RegistrySkill>> {
     registry::leaderboard(&view).await
