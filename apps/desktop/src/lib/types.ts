@@ -42,15 +42,23 @@ export interface EffectiveSkill {
   installed: boolean;
 }
 
+export interface Suggestion {
+  profile: string;
+  tag: string;
+  evidence: string;
+}
+
 export interface ProjectView {
   path: string;
   name: string;
   profile?: string | null;
+  auto: boolean;
   registered_at: string;
   exists: boolean;
   agents: AgentDef[];
   effective: EffectiveSkill[];
   has_loadout_json: boolean;
+  suggestions: Suggestion[];
 }
 
 export interface ApplySummary {

@@ -49,6 +49,14 @@ enum Command {
     },
     /// Health report: foreign skills, broken store entries, missing projects
     Doctor,
+    /// Detect a project's stack and suggest matching profiles
+    Suggest {
+        /// Project directory (default: .)
+        path: Option<PathBuf>,
+        /// Assign the first suggestion to the project (must be registered)
+        #[arg(long)]
+        accept: bool,
+    },
 }
 
 fn main() {
@@ -73,7 +81,42 @@ fn run(cli: &Cli) -> Result<i32> {
         Command::Apply { project } => apply_cmd(project.as_deref(), cli.json),
         Command::Check { path } => check(path.as_deref().unwrap_or(Path::new(".")), cli.json),
         Command::Doctor => doctor(cli.json),
+        Command::Suggest { path, accept } => {
+            suggest(path.as_deref().unwrap_or(Path::new(".")), *accept, cli.json)
+        }
     }
+}
+
+fn suggest(dir: &Path, accept: bool, json: bool) -> Result<i32> {
+    let signals = loadout_core::rules::detect_stack(dir);
+    let suggestions = loadout_core::rules::suggestions_for(dir)?;
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({ "signals": signals, "suggestions": suggestions })
+        );
+    } else {
+        if signals.is_empty() {
+            println!("no stack markers detected in {}", dir.display());
+            return Ok(0);
+        }
+        for s in &signals {
+            println!("detected {:<12} ({})", s.tag, s.evidence);
+        }
+        if suggestions.is_empty() {
+            println!("no profile names match — create one named after a tag above (e.g. 'typescript')");
+        }
+        for s in &suggestions {
+            println!("suggest  {:<12} (matches '{}')", s.profile, s.tag);
+        }
+    }
+    if accept {
+        if let Some(s) = suggestions.first() {
+            return switch(&s.profile, Some(dir), json);
+        }
+        return Err(AppError::NotFound("nothing to accept — no suggestions".into()));
+    }
+    Ok(0)
 }
 
 fn print_summaries(summaries: &[ApplySummary]) {

@@ -82,6 +82,16 @@ function ProjectCard({ project }: { project: ProjectView }) {
     onError: (e) => toast(String(e), "error"),
   });
 
+  const setAuto = useMutation({
+    mutationFn: (auto: boolean) => api.setProjectAuto(project.path, auto),
+    onSuccess: (s, auto) => {
+      if (s) toast(`${project.name}: auto-assigned — ${describeApply(s)}`, "ok");
+      else toast(auto ? "Auto-activation on" : "Auto-activation off", "ok");
+      queryClient.invalidateQueries();
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
+
   const applyDeclared = useMutation({
     mutationFn: () => api.applyLoadoutFile(project.path),
     onSuccess: (s) => {
@@ -106,6 +116,19 @@ function ProjectCard({ project }: { project: ProjectView }) {
           <Mono className="block truncate mt-0.5">{project.path}</Mono>
         </div>
         <div className="ml-auto flex items-center gap-2 shrink-0">
+          <label
+            className="flex items-center gap-1.5 text-[11.5px] text-ink-soft cursor-pointer select-none"
+            title="When no profile is assigned, automatically use the first rule match (package.json → typescript, go.mod → go, …)"
+          >
+            <input
+              type="checkbox"
+              checked={project.auto}
+              onChange={(e) => setAuto.mutate(e.target.checked)}
+              disabled={setAuto.isPending}
+              className="accent-[var(--color-accent)]"
+            />
+            auto
+          </label>
           <Select
             value={project.profile ?? ""}
             onChange={(e) => assign.mutate(e.target.value || null)}
@@ -127,6 +150,23 @@ function ProjectCard({ project }: { project: ProjectView }) {
           <Button variant="ghost" onClick={() => unregister.mutate()}>✕</Button>
         </div>
       </div>
+
+      {/* auto-activation suggestion (suggest-first: a nudge, not a surprise) */}
+      {!project.profile && project.suggestions.length > 0 && (
+        <div className="px-4 py-2 bg-paper-sunken/60 border-b border-line/70 flex items-center justify-between text-[12.5px]">
+          <span>
+            Detected <Mono>{project.suggestions[0].evidence}</Mono> — this looks like a{" "}
+            <span className="font-medium">{project.suggestions[0].tag}</span> project.
+          </span>
+          <Button
+            variant="secondary"
+            onClick={() => assign.mutate(project.suggestions[0].profile)}
+            disabled={assign.isPending}
+          >
+            Use “{project.suggestions[0].profile}”
+          </Button>
+        </div>
+      )}
 
       {/* loadout.json declaration banner (F3) */}
       {project.has_loadout_json && (

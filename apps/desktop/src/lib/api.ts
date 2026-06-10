@@ -50,6 +50,8 @@ export const api = {
   assignProfile: (path: string, profile: string | null) =>
     invoke<ApplySummary>("assign_profile", { path, profile }),
   applyProject: (path: string) => invoke<ApplySummary>("apply_project", { path }),
+  setProjectAuto: (path: string, auto: boolean) =>
+    invoke<ApplySummary | null>("set_project_auto", { path, auto }),
 
   // loadout.json
   readLoadoutFile: (path: string) => invoke<LoadoutFile>("read_loadout_file", { path }),

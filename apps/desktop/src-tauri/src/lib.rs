@@ -2,7 +2,7 @@ mod commands;
 mod tray;
 
 // the engine lives in loadout-core; re-export so `crate::apply` etc. resolve
-pub use loadout_core::{agents, apply, error, gitops, model, registry, state, store, usage};
+pub use loadout_core::{agents, apply, error, gitops, model, registry, rules, state, store, usage};
 
 /// Internal APIs re-exported for integration tests only.
 pub mod test_support {
@@ -14,6 +14,12 @@ pub fn run() {
     // crash recovery before the UI asks for anything
     let _ = state::ensure_dirs();
     let _ = apply::recover_if_needed();
+    // auto-activation: fill in profiles for opted-in projects, then materialize
+    if let Ok(assigned) = rules::auto_assign_unassigned() {
+        if !assigned.is_empty() {
+            let _ = apply::reapply_all();
+        }
+    }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -57,6 +63,7 @@ pub fn run() {
             commands::register_project,
             commands::unregister_project,
             commands::assign_profile,
+            commands::set_project_auto,
             commands::apply_project,
             commands::profile_share,
             commands::share_shorten,

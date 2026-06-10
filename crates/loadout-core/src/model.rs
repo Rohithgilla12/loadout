@@ -59,6 +59,10 @@ pub struct Project {
     pub name: String,
     #[serde(default)]
     pub profile: Option<String>,
+    /// Opt-in: when no profile is assigned, auto-assign the first suggestion
+    /// from detection rules. Suggest-first is the default (false).
+    #[serde(default)]
+    pub auto: bool,
     pub registered_at: chrono::DateTime<chrono::Utc>,
 }
 

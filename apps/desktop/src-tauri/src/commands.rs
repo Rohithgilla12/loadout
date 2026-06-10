@@ -2,7 +2,7 @@ use crate::error::{AppError, Result};
 use crate::model::*;
 use crate::{agents, apply, gitops, registry, state, store};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 // ---------- library ----------
 
@@ -172,6 +172,8 @@ pub struct ProjectView {
     pub agents: Vec<AgentDef>,
     pub effective: Vec<EffectiveSkill>,
     pub has_loadout_json: bool,
+    /// Auto-activation rule matches for this project (suggest-first UX).
+    pub suggestions: Vec<crate::rules::Suggestion>,
 }
 
 #[derive(Serialize)]
@@ -199,6 +201,7 @@ fn project_view(project: &Project, settings: &Settings) -> Result<ProjectView> {
         agents: if exists { agents::detected_project_agents(&path) } else { vec![] },
         effective,
         has_loadout_json: path.join("loadout.json").is_file(),
+        suggestions: if exists { crate::rules::suggestions_for(&path)? } else { vec![] },
     })
 }
 
@@ -231,6 +234,7 @@ pub fn register_project(path: String) -> Result<ProjectView> {
         path: canonical,
         name,
         profile: None,
+        auto: false,
         registered_at: chrono::Utc::now(),
     };
     projects.projects.push(project.clone());
@@ -262,6 +266,27 @@ pub fn assign_profile(path: String, profile: Option<String>) -> Result<ApplySumm
 
     let names = apply::project_scope_skills(project.profile.as_deref())?;
     apply::apply_scope(&names, Some(&PathBuf::from(&project.path)))
+}
+
+/// Toggle per-project auto-activation. Turning it on with no profile assigned
+/// assigns the first suggestion immediately and applies it.
+#[tauri::command]
+pub fn set_project_auto(path: String, auto: bool) -> Result<Option<ApplySummary>> {
+    let mut projects = state::load_projects()?;
+    let project = projects
+        .projects
+        .iter_mut()
+        .find(|p| p.path == path)
+        .ok_or_else(|| AppError::NotFound("project not registered".into()))?;
+    project.auto = auto;
+    let needs_assign = auto && project.profile.is_none();
+    state::save_projects(&projects)?;
+    if needs_assign {
+        if let Some(s) = crate::rules::suggestions_for(Path::new(&path))?.into_iter().next() {
+            return Ok(Some(assign_profile(path, Some(s.profile))?));
+        }
+    }
+    Ok(None)
 }
 
 #[tauri::command]

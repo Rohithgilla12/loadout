@@ -8,6 +8,7 @@ pub mod error;
 pub mod gitops;
 pub mod model;
 pub mod registry;
+pub mod rules;
 pub mod state;
 pub mod store;
 pub mod usage;
