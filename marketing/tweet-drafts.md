@@ -27,3 +27,36 @@ ideally as replies to the launch thread.
 > Your agent walks into a Go repo carrying Go skills. As it should.
 
 (attach: screenshot of the suggestion banner in Projects)
+
+## 3 — skill editor (shipped, a3f077c)
+
+> New in Loadout: a skill editor that lints your descriptions.
+>
+> The description IS the trigger — agents decide what to load from it.
+> So the editor checks for "Use when…" phrasing, flags thin or bloated
+> descriptions, and shows the token cost per session as you type.
+
+(attach: editor screenshot — split view with lint panel)
+
+## 4 — overlap report (shipped, 603f18f)
+
+> Ran Loadout's new redundancy report on my own library:
+>
+> ✗ frontend-design ↔ impeccable — 74% similar descriptions
+> ✗ "animations" claimed by 10 different skills
+>
+> No wonder agents pick the wrong skill sometimes. Doctor now catches this.
+
+## 5 — the overnight recap (post in the morning)
+
+> I went to sleep. Claude Code didn't.
+>
+> Overnight it shipped to Loadout, with tests:
+> • a full CLI (loadout switch / check / suggest)
+> • auto-activation — go.mod → go profile, suggested automatically
+> • a skill editor with description linting
+> • a redundancy report that found real duplicates in my library
+>
+> 4 features, 6 commits, all green. The future is weird. 🔥
+
+(this one is the meta-story teaser — links well to the Day-7 thread)
