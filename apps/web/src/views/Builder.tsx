@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { shareUrl, type SharedLoadout, type SharedSkill } from "../lib/share";
+import { useEffect, useMemo, useState } from "react";
+import { createShortLink, shareUrl, type SharedLoadout, type SharedSkill } from "../lib/share";
 
 /**
  * "This is my loadout" — paste a loadout.json (exported from the app) or add
@@ -25,7 +25,11 @@ export function Builder() {
     };
   }, [by, profile, note, skills]);
 
-  const url = loadout ? shareUrl(loadout) : null;
+  const longUrl = loadout ? shareUrl(loadout) : null;
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [shortening, setShortening] = useState(false);
+  useEffect(() => setShortUrl(null), [longUrl]);
+  const url = shortUrl ?? longUrl;
 
   const handlePaste = (text: string) => {
     setPasteError(null);
@@ -179,9 +183,25 @@ export function Builder() {
           )}
 
           {/* result */}
-          {url && (
+          {url && loadout && (
             <div className="rise-in border-2 border-accent rounded-lg p-4 bg-accent-wash/40">
-              <div className="text-[13px] font-semibold mb-2">Your share link</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[13px] font-semibold">Your share link</div>
+                {!shortUrl && (
+                  <button
+                    onClick={async () => {
+                      setShortening(true);
+                      const short = await createShortLink(loadout);
+                      setShortening(false);
+                      if (short) setShortUrl(short);
+                    }}
+                    disabled={shortening}
+                    className="text-[12.5px] font-medium border border-line-strong hover:border-ink-faint rounded-md px-3 py-1 disabled:opacity-50"
+                  >
+                    {shortening ? "Shortening…" : "Make it short"}
+                  </button>
+                )}
+              </div>
               <div className="flex gap-2">
                 <input
                   readOnly

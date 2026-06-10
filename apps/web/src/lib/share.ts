@@ -66,6 +66,40 @@ export function readShareFromHash(): SharedLoadout | null {
   return m ? decodeLoadout(m[1]) : null;
 }
 
+export function readSlugFromPath(): string | null {
+  const m = location.pathname.match(/^\/s\/([a-z0-9]{4,16})$/);
+  return m ? m[1] : null;
+}
+
+/** Create a short link via the Workers API. Returns null when the API is
+ *  unreachable — callers fall back to the self-contained #L= link. */
+export async function createShortLink(loadout: SharedLoadout): Promise<string | null> {
+  try {
+    const resp = await fetch("/api/share", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(loadout),
+    });
+    if (!resp.ok) return null;
+    const data = (await resp.json()) as { url?: string };
+    return typeof data.url === "string" ? data.url : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchSharedLoadout(slug: string): Promise<SharedLoadout | null> {
+  try {
+    const resp = await fetch(`/api/share/${slug}`);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    // same defensive shape-check as the fragment path
+    return decodeLoadout(toBase64Url(JSON.stringify(data)));
+  } catch {
+    return null;
+  }
+}
+
 /** Convert a shared loadout to a committable loadout.json body. */
 export function toLoadoutJson(l: SharedLoadout): string {
   return JSON.stringify(
