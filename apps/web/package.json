@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:worker": "wrangler types && tsc -p tsconfig.worker.json",
+    "deploy": "pnpm build && pnpm check:worker && wrangler deploy"
   },
   "dependencies": {
     "react": "^19.1.0",

@@ -9,10 +9,7 @@
  * client-side — this API only adds short links.
  */
 
-interface Env {
-  SHARES: KVNamespace;
-  ASSETS: Fetcher;
-}
+// Env comes from worker-configuration.d.ts — regenerate with `wrangler types`
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_SKILLS = 100;
@@ -20,10 +17,18 @@ const SLUG_LENGTH = 8;
 const SLUG_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789"; // no 0/O/1/l/i
 
 function newSlug(): string {
-  const bytes = new Uint8Array(SLUG_LENGTH);
-  crypto.getRandomValues(bytes);
+  // rejection sampling: keep slugs uniform over the 31-char alphabet
+  const limit = 256 - (256 % SLUG_ALPHABET.length);
   let out = "";
-  for (const b of bytes) out += SLUG_ALPHABET[b % SLUG_ALPHABET.length];
+  while (out.length < SLUG_LENGTH) {
+    const bytes = new Uint8Array(SLUG_LENGTH * 2);
+    crypto.getRandomValues(bytes);
+    for (const b of bytes) {
+      if (b < limit && out.length < SLUG_LENGTH) {
+        out += SLUG_ALPHABET[b % SLUG_ALPHABET.length];
+      }
+    }
+  }
   return out;
 }
 
@@ -78,13 +83,18 @@ export default {
     const url = new URL(request.url);
 
     if (url.pathname === "/api/share" && request.method === "POST") {
+      // guard the read itself, not just the (spoofable/absent) content-length
       const length = Number(request.headers.get("content-length") ?? "0");
       if (length > MAX_BODY_BYTES) {
         return json({ error: "loadout too large" }, 413);
       }
+      const text = await request.text();
+      if (text.length > MAX_BODY_BYTES) {
+        return json({ error: "loadout too large" }, 413);
+      }
       let body: unknown;
       try {
-        body = await request.json();
+        body = JSON.parse(text);
       } catch {
         return json({ error: "invalid JSON" }, 400);
       }

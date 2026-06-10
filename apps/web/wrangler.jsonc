@@ -3,6 +3,7 @@
   "name": "loadout-web",
   "main": "worker/index.ts",
   "compatibility_date": "2026-06-01",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
@@ -14,5 +15,5 @@
     { "binding": "SHARES" }
   ],
   "routes": [{ "pattern": "loadout.gilla.fun", "custom_domain": true }],
-  "observability": { "enabled": true }
+  "observability": { "enabled": true, "head_sampling_rate": 1 }
 }
