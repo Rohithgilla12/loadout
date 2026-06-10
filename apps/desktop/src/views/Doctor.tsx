@@ -1,0 +1,129 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api } from "../lib/api";
+import { Badge, Button, Mono, SectionLabel, Spinner } from "../components/ui";
+import { useToast } from "../components/Toast";
+
+export function Doctor() {
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const report = useQuery({ queryKey: ["doctor"], queryFn: api.doctor });
+
+  const adopt = useMutation({
+    mutationFn: api.adoptSkill,
+    onSuccess: (entry) => {
+      toast(`Adopted ${entry.name} into the store`, "ok");
+      queryClient.invalidateQueries();
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
+
+  const reapply = useMutation({
+    mutationFn: api.reapplyAll,
+    onSuccess: () => {
+      toast("Re-applied every scope", "ok");
+      queryClient.invalidateQueries();
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
+
+  if (report.isLoading) {
+    return <div className="h-full flex items-center justify-center"><Spinner /></div>;
+  }
+
+  const r = report.data;
+  if (!r) return null;
+
+  const healthy = !r.foreign.length && !r.missing_projects.length && !r.broken_store.length;
+
+  return (
+    <div className="p-5 max-w-3xl">
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="text-[16px] font-semibold tracking-tight">Doctor</h2>
+        <div className="flex gap-2">
+          <Button onClick={() => report.refetch()}>Re-scan</Button>
+          <Button onClick={() => reapply.mutate()} disabled={reapply.isPending}>
+            {reapply.isPending ? <Spinner /> : "Re-apply all scopes"}
+          </Button>
+        </div>
+      </div>
+      <p className="text-[12.5px] text-ink-soft mb-5">
+        Drift detection and repair. Loadout never deletes anything it didn't create.
+      </p>
+
+      {r.recovered_journal && (
+        <div className="mb-4 px-3 py-2 rounded-md bg-warn-wash border border-warn/30 text-[12.5px]">
+          A previous apply was interrupted — state was recovered and re-applied on launch.
+        </div>
+      )}
+
+      {healthy && (
+        <div className="px-3 py-2 rounded-md bg-ok-wash border border-ok/25 text-[12.5px]">
+          Everything checks out. Agent directories match the lockfile, no foreign drift.
+        </div>
+      )}
+
+      {r.foreign.length > 0 && (
+        <section className="mb-6">
+          <SectionLabel>Foreign skills ({r.foreign.length})</SectionLabel>
+          <p className="text-[12px] text-ink-faint mb-2">
+            Installed by other tools (e.g. <Mono>npx skills</Mono>). Adopt to manage them with
+            profiles — the original files are copied, never moved.
+          </p>
+          <div className="border border-line rounded-lg overflow-hidden">
+            {r.foreign.map((f) => (
+              <div
+                key={f.dir}
+                className="flex items-center justify-between px-3.5 py-2 border-b border-line/60 last:border-0"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-[13px]">{f.name}</span>
+                    <Badge tone="neutral">{f.agent_id}</Badge>
+                    <Badge tone="neutral">{f.scope === "global" ? "global" : "project"}</Badge>
+                    {f.is_symlink && <Badge tone="warn">symlink</Badge>}
+                  </div>
+                  <Mono className="block truncate mt-0.5">{f.dir}</Mono>
+                </div>
+                <Button
+                  className="shrink-0 ml-3"
+                  onClick={() => adopt.mutate(f.dir)}
+                  disabled={adopt.isPending}
+                >
+                  Adopt
+                </Button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {r.broken_store.length > 0 && (
+        <section className="mb-6">
+          <SectionLabel>Broken store entries ({r.broken_store.length})</SectionLabel>
+          <p className="text-[12px] text-ink-faint mb-2">
+            These lockfile entries point at missing store content. Re-install or remove them from
+            the Library.
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {r.broken_store.map((name) => (
+              <Badge key={name} tone="danger">{name}</Badge>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {r.missing_projects.length > 0 && (
+        <section className="mb-6">
+          <SectionLabel>Missing projects ({r.missing_projects.length})</SectionLabel>
+          <p className="text-[12px] text-ink-faint mb-2">
+            Registered directories that no longer exist (moved or deleted). Unregister them in
+            Projects.
+          </p>
+          {r.missing_projects.map((p) => (
+            <Mono key={p} className="block">{p}</Mono>
+          ))}
+        </section>
+      )}
+    </div>
+  );
+}
