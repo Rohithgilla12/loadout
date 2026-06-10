@@ -4,6 +4,7 @@ import { api, describeApply } from "../lib/api";
 import type { LibrarySkill } from "../lib/types";
 import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Sha, Spinner, cx } from "../components/ui";
 import { SkillMarkdown } from "../components/SkillMarkdown";
+import { SkillEditor } from "../components/SkillEditor";
 import { estimateSkillTokens, formatSize, formatTokens } from "../lib/format";
 import { useToast } from "../components/Toast";
 
@@ -13,6 +14,7 @@ export function Library() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "updates" | "local" | "unused">("all");
   const [selectedName, setSelectedName] = useState<string | null>(null);
+  const [editing, setEditing] = useState<{ name: string; content: string } | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -295,6 +297,30 @@ export function Library() {
                 </div>
               </div>
               <div className="flex gap-1.5 shrink-0">
+                {detail.data.entry.source === "local" ? (
+                  <Button
+                    onClick={() => setEditing({ name: selectedName, content: detail.data!.skill_md })}
+                    title="Edit SKILL.md with live preview and description linting"
+                  >
+                    Edit
+                  </Button>
+                ) : (
+                  <Button
+                    title="Remote skills are pinned content — forking makes a local editable copy"
+                    onClick={async () => {
+                      try {
+                        const entry = await api.forkSkill(selectedName, `${selectedName}-fork`);
+                        const content = await api.readSkillFile(entry.name, "SKILL.md");
+                        queryClient.invalidateQueries();
+                        setEditing({ name: entry.name, content });
+                      } catch (e) {
+                        toast(String(e), "error");
+                      }
+                    }}
+                  >
+                    Fork & edit
+                  </Button>
+                )}
                 {detail.data.entry.prev_rev && (
                   <Button onClick={() => rollback.mutate(selectedName)} disabled={rollback.isPending}>
                     Roll back
@@ -335,6 +361,15 @@ export function Library() {
           </Centered>
         )}
       </div>
+
+      {/* skill editor (F6) */}
+      {editing && (
+        <SkillEditor
+          name={editing.name}
+          initial={editing.content}
+          onClose={() => setEditing(null)}
+        />
+      )}
 
       {/* diff viewer */}
       {diff && (
