@@ -1,0 +1,24 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EC6F2D"/>
+      <stop offset="1" stop-color="#C8511A"/>
+    </linearGradient>
+  </defs>
+  <!-- macOS-style rounded square -->
+  <rect x="64" y="64" width="896" height="896" rx="200" fill="url(#bg)"/>
+  <!-- subtle top highlight -->
+  <rect x="64" y="64" width="896" height="448" rx="200" fill="white" opacity="0.06"/>
+
+  <!-- loadout: a 2x2 kit grid, one slot equipped -->
+  <g>
+    <!-- equipped slot: solid -->
+    <rect x="262" y="262" width="225" height="225" rx="48" fill="#FFF7F0"/>
+    <!-- empty slots: outlined -->
+    <rect x="537" y="262" width="225" height="225" rx="48" fill="none" stroke="#FFF7F0" stroke-width="30" opacity="0.85"/>
+    <rect x="262" y="537" width="225" height="225" rx="48" fill="none" stroke="#FFF7F0" stroke-width="30" opacity="0.85"/>
+    <rect x="537" y="537" width="225" height="225" rx="48" fill="none" stroke="#FFF7F0" stroke-width="30" opacity="0.85"/>
+    <!-- check mark inside the equipped slot -->
+    <path d="M 318 374 L 360 418 L 432 330" fill="none" stroke="#C8511A" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,8 +1,34 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { Badge, Button, Input, Mono, SectionLabel, Spinner } from "../components/ui";
+import { setThemePref, useThemePref, type ThemePref } from "../lib/theme";
+import { Badge, Button, Input, Mono, SectionLabel, Spinner, cx } from "../components/ui";
 import { useToast } from "../components/Toast";
+
+function ThemeToggle() {
+  const pref = useThemePref();
+  const options: Array<{ id: ThemePref; label: string }> = [
+    { id: "system", label: "System" },
+    { id: "light", label: "Light" },
+    { id: "dark", label: "Dark" },
+  ];
+  return (
+    <div className="inline-flex rounded border border-line overflow-hidden text-[12.5px] mt-1">
+      {options.map((o) => (
+        <button
+          key={o.id}
+          onClick={() => setThemePref(o.id)}
+          className={cx(
+            "px-3 py-1",
+            pref === o.id ? "bg-paper-sunken font-medium" : "text-ink-soft hover:bg-paper-sunken/60",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function SettingsView() {
   const toast = useToast();
@@ -32,6 +58,11 @@ export function SettingsView() {
   return (
     <div className="p-5 max-w-2xl">
       <h2 className="text-[16px] font-semibold tracking-tight mb-5">Settings</h2>
+
+      <section className="mb-7">
+        <SectionLabel>Appearance</SectionLabel>
+        <ThemeToggle />
+      </section>
 
       <section className="mb-7">
         <SectionLabel>Detected agents</SectionLabel>

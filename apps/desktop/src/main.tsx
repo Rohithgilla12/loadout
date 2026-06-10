@@ -8,7 +8,10 @@ import "@fontsource/ibm-plex-sans/700.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./styles.css";
+import { initTheme } from "./lib/theme";
 import App from "./App";
+
+initTheme();
 
 const queryClient = new QueryClient({
   defaultOptions: {

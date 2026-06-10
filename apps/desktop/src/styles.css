@@ -26,6 +26,36 @@
   --color-danger-wash: oklch(0.95 0.03 25);
 }
 
+/* dark mode: same workbench, lights off — warm charcoal, never pure black,
+   the safety-orange accent carries over */
+html.dark {
+  --color-paper: oklch(0.21 0.008 60);
+  --color-paper-raised: oklch(0.245 0.009 60);
+  --color-paper-sunken: oklch(0.175 0.007 60);
+  --color-ink: oklch(0.89 0.008 80);
+  --color-ink-soft: oklch(0.72 0.01 75);
+  --color-ink-faint: oklch(0.55 0.01 70);
+  --color-line: oklch(0.31 0.01 65);
+  --color-line-strong: oklch(0.4 0.012 65);
+
+  --color-accent: oklch(0.7 0.18 45);
+  --color-accent-deep: oklch(0.62 0.17 45);
+  --color-accent-wash: oklch(0.3 0.05 50);
+
+  --color-ok: oklch(0.72 0.12 150);
+  --color-ok-wash: oklch(0.28 0.04 150);
+  --color-warn: oklch(0.78 0.13 80);
+  --color-warn-wash: oklch(0.29 0.05 85);
+  --color-danger: oklch(0.7 0.16 25);
+  --color-danger-wash: oklch(0.28 0.05 25);
+
+  color-scheme: dark;
+}
+
+html {
+  color-scheme: light;
+}
+
 html,
 body,
 #root {
