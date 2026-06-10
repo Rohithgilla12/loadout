@@ -775,8 +775,13 @@ pub fn save_settings_cmd(settings: Settings) -> Result<()> {
 }
 
 #[tauri::command]
-pub async fn registry_get_cmd(path: String) -> Result<serde_json::Value> {
-    registry::registry_get(&path).await
+pub async fn registry_leaderboard(view: String) -> Result<Vec<registry::RegistrySkill>> {
+    registry::leaderboard(&view).await
+}
+
+#[tauri::command]
+pub async fn registry_search(q: String) -> Result<Vec<registry::RegistrySkill>> {
+    registry::search(&q).await
 }
 
 #[derive(Deserialize)]

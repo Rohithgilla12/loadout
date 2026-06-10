@@ -4,7 +4,7 @@ import { api, describeApply } from "../lib/api";
 import type { LibrarySkill } from "../lib/types";
 import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Sha, Spinner, cx } from "../components/ui";
 import { SkillMarkdown } from "../components/SkillMarkdown";
-import { formatSize } from "../components/InstallFlow";
+import { formatSize } from "../lib/format";
 import { useToast } from "../components/Toast";
 
 export function Library() {

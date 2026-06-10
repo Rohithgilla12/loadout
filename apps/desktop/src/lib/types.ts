@@ -133,6 +133,14 @@ export interface Overview {
   loadout_root: string;
 }
 
+export interface RegistrySkill {
+  source: string;
+  skillId: string;
+  name: string;
+  installs: number;
+  isOfficial: boolean;
+}
+
 export interface LoadoutFileSkill {
   source: string;
   skill: string;

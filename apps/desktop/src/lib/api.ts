@@ -9,6 +9,7 @@ import type {
   Overview,
   Profile,
   ProjectView,
+  RegistrySkill,
   ResolvedSource,
   Settings,
   SkillDetail,
@@ -78,7 +79,8 @@ export const api = {
   reapplyAll: () => invoke<ApplySummary[]>("reapply_all_cmd"),
 
   // registry
-  registryGet: (path: string) => invoke<unknown>("registry_get_cmd", { path }),
+  registryLeaderboard: (view: string) => invoke<RegistrySkill[]>("registry_leaderboard", { view }),
+  registrySearch: (q: string) => invoke<RegistrySkill[]>("registry_search", { q }),
 };
 
 export function describeApply(summaries: ApplySummary | ApplySummary[]): string {
