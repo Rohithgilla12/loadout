@@ -5,6 +5,7 @@ import type {
   LibrarySkill,
   LoadoutFile,
   LockEntry,
+  MigrateSummary,
   Overview,
   Profile,
   ProjectView,
@@ -72,6 +73,8 @@ export const api = {
   // doctor
   doctor: () => invoke<DoctorReport>("doctor"),
   adoptSkill: (dir: string) => invoke<LockEntry>("adopt_skill", { dir }),
+  migrateAll: (replace: boolean, profileName: string) =>
+    invoke<MigrateSummary>("migrate_all", { replace, profileName }),
   reapplyAll: () => invoke<ApplySummary[]>("reapply_all_cmd"),
 
   // registry

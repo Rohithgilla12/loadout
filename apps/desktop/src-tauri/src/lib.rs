@@ -55,6 +55,7 @@ pub fn run() {
             commands::fork_skill,
             commands::doctor,
             commands::adopt_skill,
+            commands::migrate_all,
             commands::reapply_all_cmd,
             commands::get_overview,
             commands::save_settings_cmd,

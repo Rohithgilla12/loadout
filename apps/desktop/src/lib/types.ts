@@ -102,6 +102,14 @@ export interface ForeignSkill {
   name: string;
   is_symlink: boolean;
   description?: string;
+  already_adopted: boolean;
+}
+
+export interface MigrateSummary {
+  adopted: number;
+  replaced: number;
+  skipped: string[];
+  profile: string;
 }
 
 export interface DoctorReport {

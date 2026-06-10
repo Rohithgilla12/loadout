@@ -110,6 +110,9 @@ pub struct ForeignSkill {
     pub is_symlink: bool,
     #[serde(default)]
     pub description: Option<String>,
+    /// True when a lock entry with this name already exists.
+    #[serde(default)]
+    pub already_adopted: bool,
 }
 
 /// Pending journal written before any reconcile mutation, replayed on crash.

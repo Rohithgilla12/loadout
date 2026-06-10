@@ -726,6 +726,19 @@ pub fn adopt_skill(dir: String) -> Result<LockEntry> {
     apply::adopt_foreign(&dir)
 }
 
+/// Onboarding: import every global foreign skill at once, then re-apply so
+/// managed symlinks land where originals were replaced.
+#[tauri::command]
+pub fn migrate_all(replace: bool, profile_name: String) -> Result<apply::MigrateSummary> {
+    let foreign: Vec<ForeignSkill> = apply::scan_foreign()?
+        .into_iter()
+        .filter(|f| f.scope == "global")
+        .collect();
+    let summary = apply::migrate_entries(&foreign, replace, &profile_name)?;
+    apply::reapply_all()?;
+    Ok(summary)
+}
+
 #[tauri::command]
 pub fn reapply_all_cmd() -> Result<Vec<ApplySummary>> {
     apply::reapply_all()

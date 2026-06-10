@@ -210,6 +210,7 @@ pub fn recover_if_needed() -> Result<bool> {
 /// Scan agent dirs for entries Loadout doesn't own (foreign skills → adopt candidates).
 pub fn scan_foreign() -> Result<Vec<ForeignSkill>> {
     let mut out = vec![];
+    let lock = state::load_lock()?;
     let projects = state::load_projects()?;
     let mut scopes: Vec<(String, Option<PathBuf>)> = vec![("global".into(), None)];
     for p in &projects.projects {
@@ -244,6 +245,7 @@ pub fn scan_foreign() -> Result<Vec<ForeignSkill>> {
                     agent_id: agent.id.clone(),
                     scope: label.clone(),
                     dir: path.to_string_lossy().to_string(),
+                    already_adopted: lock.skills.contains_key(&name),
                     name,
                     is_symlink: fs::symlink_metadata(&path)
                         .map(|m| m.file_type().is_symlink())
@@ -254,6 +256,136 @@ pub fn scan_foreign() -> Result<Vec<ForeignSkill>> {
         }
     }
     Ok(out)
+}
+
+#[derive(Debug, Clone, Default, serde::Serialize)]
+pub struct MigrateSummary {
+    pub adopted: u32,
+    pub replaced: u32,
+    pub skipped: Vec<String>,
+    pub profile: String,
+}
+
+/// One-shot onboarding migration: bulk-import foreign skills into the store,
+/// collect them into a profile (set as base so future re-applies keep them
+/// live), and optionally replace the originals with managed symlinks.
+///
+/// The same skill typically appears several times — symlinked from multiple
+/// agent dirs — so entries are deduped by canonical path first. Originals are
+/// only removed when `replace` is set AND the store copy is verified to match
+/// byte-for-byte on SKILL.md.
+pub fn migrate_entries(
+    entries: &[ForeignSkill],
+    replace: bool,
+    profile_name: &str,
+) -> Result<MigrateSummary> {
+    state::validate_name(profile_name)?;
+    let mut summary = MigrateSummary {
+        profile: profile_name.to_string(),
+        ..Default::default()
+    };
+    let mut lock = state::load_lock()?;
+
+    // canonical content dir -> every agent-dir entry that resolves to it
+    let mut groups: std::collections::BTreeMap<PathBuf, Vec<&ForeignSkill>> = Default::default();
+    for e in entries {
+        match fs::canonicalize(&e.dir) {
+            Ok(c) => groups.entry(c).or_default().push(e),
+            Err(_) => summary.skipped.push(format!("{}: unreadable", e.dir)),
+        }
+    }
+
+    let mut profile_names: Vec<String> = vec![];
+    for (canonical, group) in &groups {
+        let name = group[0].name.clone();
+        if state::validate_name(&name).is_err() {
+            summary.skipped.push(format!("{name}: invalid skill name"));
+            continue;
+        }
+        let src_md = match fs::read(canonical.join("SKILL.md")) {
+            Ok(b) => b,
+            Err(_) => {
+                summary.skipped.push(format!("{name}: no SKILL.md, not a skill"));
+                continue;
+            }
+        };
+
+        let store_path = if let Some(existing) = lock.skills.get(&name) {
+            store::skill_store_path(existing)
+        } else {
+            let meta = store::read_skill_meta(canonical);
+            let entry = LockEntry {
+                name: name.clone(),
+                source: "local".into(),
+                url: None,
+                rev: None,
+                prev_rev: None,
+                repo_path: None,
+                track: "pinned".into(),
+                description: meta.map(|m| m.description).unwrap_or_default(),
+                installed_at: chrono::Utc::now(),
+            };
+            let dest = store::skill_store_path(&entry);
+            if !dest.exists() {
+                store::copy_dir(canonical, &dest)?;
+            }
+            if !dest.join("SKILL.md").is_file() {
+                summary.skipped.push(format!("{name}: store copy failed"));
+                continue;
+            }
+            lock.skills.insert(name.clone(), entry.clone());
+            summary.adopted += 1;
+            dest
+        };
+        profile_names.push(name.clone());
+
+        if replace {
+            // only take over an original whose content provably matches the store
+            let content_matches = fs::read(store_path.join("SKILL.md"))
+                .map(|b| b == src_md)
+                .unwrap_or(false);
+            if !content_matches {
+                summary
+                    .skipped
+                    .push(format!("{name}: different content already in library, original left in place"));
+                continue;
+            }
+            for e in group {
+                if e.name != name {
+                    summary
+                        .skipped
+                        .push(format!("{}: alias under a different name, left in place", e.dir));
+                    continue;
+                }
+                let p = PathBuf::from(&e.dir);
+                let Ok(meta) = fs::symlink_metadata(&p) else { continue };
+                if meta.file_type().is_symlink() {
+                    fs::remove_file(&p)?;
+                } else {
+                    fs::remove_dir_all(&p)?;
+                }
+                summary.replaced += 1;
+            }
+        }
+    }
+    state::save_lock(&lock)?;
+
+    // the profile is what guarantees these skills survive every future re-apply
+    let mut profile = state::load_profile(profile_name).unwrap_or(Profile {
+        name: profile_name.to_string(),
+        extends: None,
+        skills: vec![],
+    });
+    for n in profile_names {
+        if !profile.skills.contains(&n) {
+            profile.skills.push(n);
+        }
+    }
+    state::save_profile(&profile)?;
+    let mut settings = state::load_settings()?;
+    settings.base_profile = Some(profile_name.to_string());
+    state::save_settings(&settings)?;
+    Ok(summary)
 }
 
 /// Import a foreign skill directory into the store as a local skill.
@@ -363,6 +495,59 @@ mod tests {
         reconcile_dir(&agent_dir, &targets, &mut summary).unwrap();
         assert_eq!((summary.added, summary.removed), (0, 0));
         assert_eq!(summary.unchanged, 1);
+    }
+
+    #[test]
+    fn migrate_dedupes_and_replaces() {
+        let _ctx = setup();
+        // a "real" skill dir in one agent, symlinked from another — the
+        // exact shape of an npx-skills install
+        let agents_dir = state::loadout_root().join("fake-agents-skills");
+        let claude_dir = state::loadout_root().join("fake-claude-skills");
+        fs::create_dir_all(agents_dir.join("my-skill")).unwrap();
+        fs::create_dir_all(&claude_dir).unwrap();
+        fs::write(
+            agents_dir.join("my-skill/SKILL.md"),
+            "---\nname: my-skill\ndescription: d\n---\nbody",
+        )
+        .unwrap();
+        std::os::unix::fs::symlink(agents_dir.join("my-skill"), claude_dir.join("my-skill")).unwrap();
+
+        let entry = |dir: &std::path::Path, link: bool| ForeignSkill {
+            agent_id: "x".into(),
+            scope: "global".into(),
+            dir: dir.to_string_lossy().to_string(),
+            name: "my-skill".into(),
+            is_symlink: link,
+            description: None,
+            already_adopted: false,
+        };
+        let entries = vec![
+            entry(&claude_dir.join("my-skill"), true),
+            entry(&agents_dir.join("my-skill"), false),
+        ];
+
+        let summary = migrate_entries(&entries, true, "everything").unwrap();
+        assert_eq!(summary.adopted, 1, "two paths, one canonical skill");
+        assert_eq!(summary.replaced, 2, "both originals taken over");
+
+        // store has the content, lock and profile know it, base is set
+        let store_copy = state::store_dir().join("local/my-skill/SKILL.md");
+        assert!(store_copy.is_file());
+        assert!(state::load_lock().unwrap().skills.contains_key("my-skill"));
+        let profile = state::load_profile("everything").unwrap();
+        assert_eq!(profile.skills, vec!["my-skill"]);
+        assert_eq!(
+            state::load_settings().unwrap().base_profile.as_deref(),
+            Some("everything")
+        );
+        // originals gone (reapply would now lay down managed symlinks)
+        assert!(!claude_dir.join("my-skill").exists());
+        assert!(!agents_dir.join("my-skill").exists());
+
+        // idempotent: nothing left to adopt, nothing double-counted
+        let summary2 = migrate_entries(&[], true, "everything").unwrap();
+        assert_eq!((summary2.adopted, summary2.replaced), (0, 0));
     }
 
     #[test]

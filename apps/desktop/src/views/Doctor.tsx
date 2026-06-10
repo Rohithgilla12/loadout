@@ -1,12 +1,27 @@
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api";
-import { Badge, Button, Mono, SectionLabel, Spinner } from "../components/ui";
+import { Badge, Button, Input, Mono, SectionLabel, Spinner } from "../components/ui";
 import { useToast } from "../components/Toast";
 
 export function Doctor() {
   const toast = useToast();
   const queryClient = useQueryClient();
   const report = useQuery({ queryKey: ["doctor"], queryFn: api.doctor });
+  const [replaceOriginals, setReplaceOriginals] = useState(true);
+  const [importProfile, setImportProfile] = useState("everything");
+
+  const migrate = useMutation({
+    mutationFn: () => api.migrateAll(replaceOriginals, importProfile.trim() || "everything"),
+    onSuccess: (s) => {
+      toast(
+        `Imported ${s.adopted} skills into “${s.profile}”${s.replaced ? `, took over ${s.replaced} originals` : ""}${s.skipped.length ? ` (${s.skipped.length} skipped)` : ""}`,
+        "ok",
+      );
+      queryClient.invalidateQueries();
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
 
   const adopt = useMutation({
     mutationFn: api.adoptSkill,
@@ -64,6 +79,45 @@ export function Doctor() {
 
       {r.foreign.length > 0 && (
         <section className="mb-6">
+          {/* one-shot onboarding migration */}
+          <div className="mb-5 border-2 border-accent rounded-lg p-4 bg-accent-wash/40 rise-in">
+            <h3 className="font-semibold text-[14px]">Bring everything into Loadout</h3>
+            <p className="text-[12.5px] text-ink-soft mt-1 leading-relaxed max-w-xl">
+              One click imports all {r.foreign.length} entries — deduped down to unique skills
+              (symlink aliases collapse to one) — into the store, collects them in a profile, and
+              sets it as your base so nothing disappears from your agents.
+            </p>
+            <label className="flex items-center gap-2 mt-3 text-[12.5px]">
+              <input
+                type="checkbox"
+                checked={replaceOriginals}
+                onChange={(e) => setReplaceOriginals(e.target.checked)}
+                className="accent-(--color-accent)"
+              />
+              <span>
+                Replace originals with managed symlinks{" "}
+                <span className="text-ink-faint">
+                  (only when content matches the imported copy, byte-for-byte)
+                </span>
+              </span>
+            </label>
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-[12.5px] text-ink-soft">Profile name</span>
+              <Input
+                value={importProfile}
+                onChange={(e) => setImportProfile(e.target.value)}
+                className="max-w-[180px]"
+              />
+              <Button
+                variant="primary"
+                onClick={() => migrate.mutate()}
+                disabled={migrate.isPending}
+              >
+                {migrate.isPending ? <Spinner /> : "Import all"}
+              </Button>
+            </div>
+          </div>
+
           <SectionLabel>Foreign skills ({r.foreign.length})</SectionLabel>
           <p className="text-[12px] text-ink-faint mb-2">
             Installed by other tools (e.g. <Mono>npx skills</Mono>). Adopt to manage them with
@@ -81,15 +135,16 @@ export function Doctor() {
                     <Badge tone="neutral">{f.agent_id}</Badge>
                     <Badge tone="neutral">{f.scope === "global" ? "global" : "project"}</Badge>
                     {f.is_symlink && <Badge tone="warn">symlink</Badge>}
+                    {f.already_adopted && <Badge tone="ok">in library</Badge>}
                   </div>
                   <Mono className="block truncate mt-0.5">{f.dir}</Mono>
                 </div>
                 <Button
                   className="shrink-0 ml-3"
                   onClick={() => adopt.mutate(f.dir)}
-                  disabled={adopt.isPending}
+                  disabled={adopt.isPending || f.already_adopted}
                 >
-                  Adopt
+                  {f.already_adopted ? "Adopted" : "Adopt"}
                 </Button>
               </div>
             ))}
