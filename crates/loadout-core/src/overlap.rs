@@ -30,12 +30,15 @@ pub struct OverlapReport {
     pub contested: Vec<ContestedKeyword>,
 }
 
-/// Words too generic to mean anything in a skill description.
+/// Words too generic to mean anything in a skill description — English glue
+/// plus the verbs every skill description uses ("use when the user asks…").
 const STOPWORDS: &[&str] = &[
-    "a", "an", "and", "any", "are", "as", "at", "be", "by", "can", "create", "do", "for", "from",
-    "get", "has", "have", "how", "in", "into", "is", "it", "like", "make", "new", "of", "on",
-    "or", "should", "skill", "that", "the", "this", "to", "tool", "up", "us", "use", "used",
-    "user", "users", "using", "when", "whenever", "with", "you", "your",
+    "a", "an", "and", "any", "are", "as", "asked", "asks", "at", "be", "by", "can", "covers",
+    "create", "do", "for", "from", "get", "has", "have", "helps", "how", "in", "include",
+    "includes", "into", "is", "it", "like", "make", "mention", "mentions", "need", "needs",
+    "new", "of", "on", "or", "request", "requests", "should", "skill", "that", "the", "this",
+    "to", "tool", "trigger", "triggers", "up", "us", "use", "used", "user", "users", "using",
+    "want", "wants", "when", "whenever", "with", "you", "your",
 ];
 
 fn tokens(description: &str) -> BTreeSet<String> {
@@ -102,8 +105,8 @@ pub fn analyze(lock: &LockFile) -> OverlapReport {
     near_duplicates.truncate(20);
 
     // contested keywords: claimed by 2+ skills but not by "everything"
-    // (a token half the library uses is a theme, not a collision)
-    let ceiling = (n / 4).max(4);
+    // (a token a fifth of the library uses is a theme, not a collision)
+    let ceiling = (n / 10).max(3);
     let mut contested: Vec<ContestedKeyword> = df
         .into_iter()
         .filter(|(_, names)| names.len() >= 2 && names.len() <= ceiling)
