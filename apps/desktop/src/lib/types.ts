@@ -123,6 +123,13 @@ export interface DoctorReport {
 export interface Settings {
   base_profile?: string | null;
   check_updates_on_launch: boolean;
+  share_admin_key?: string | null;
+}
+
+export interface SlugCheck {
+  valid: boolean;
+  reserved: boolean;
+  available: boolean;
 }
 
 export interface Overview {

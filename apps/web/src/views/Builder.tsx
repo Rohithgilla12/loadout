@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { createShortLink, shareUrl, type SharedLoadout, type SharedSkill } from "../lib/share";
+import {
+  captureAdminKey,
+  checkSlug,
+  createShortLink,
+  shareUrl,
+  type SlugCheck,
+  type SharedLoadout,
+  type SharedSkill,
+} from "../lib/share";
 
 /**
  * "This is my loadout" — paste a loadout.json (exported from the app) or add
@@ -28,8 +36,23 @@ export function Builder() {
   const longUrl = loadout ? shareUrl(loadout) : null;
   const [shortUrl, setShortUrl] = useState<string | null>(null);
   const [shortening, setShortening] = useState(false);
+  const [shortError, setShortError] = useState<string | null>(null);
+  const [customSlug, setCustomSlug] = useState("");
+  const [slugCheck, setSlugCheck] = useState<SlugCheck | null>(null);
   useEffect(() => setShortUrl(null), [longUrl]);
+  useEffect(() => captureAdminKey(), []);
   const url = shortUrl ?? longUrl;
+
+  // live availability check, debounced
+  useEffect(() => {
+    setSlugCheck(null);
+    const slug = customSlug.trim().toLowerCase();
+    if (slug.length < 3) return;
+    const handle = setTimeout(() => {
+      checkSlug(slug).then(setSlugCheck);
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [customSlug]);
 
   const handlePaste = (text: string) => {
     setPasteError(null);
@@ -189,21 +212,55 @@ export function Builder() {
             <div className="rise-in border-2 border-accent rounded-lg p-4 bg-accent-wash/40">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-[13px] font-semibold">Your share link</div>
-                {!shortUrl && (
-                  <button
-                    onClick={async () => {
-                      setShortening(true);
-                      const short = await createShortLink(loadout);
-                      setShortening(false);
-                      if (short) setShortUrl(short);
-                    }}
-                    disabled={shortening}
-                    className="text-[12.5px] font-medium border border-line-strong hover:border-ink-faint rounded-md px-3 py-1 disabled:opacity-50"
-                  >
-                    {shortening ? "Shortening…" : "Make it short"}
-                  </button>
-                )}
               </div>
+              {!shortUrl && (
+                <div className="mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[12.5px] text-ink-faint shrink-0">
+                      loadout.gilla.fun/s/
+                    </span>
+                    <input
+                      value={customSlug}
+                      onChange={(e) => setCustomSlug(e.target.value)}
+                      placeholder="custom-slug (optional)"
+                      spellCheck={false}
+                      className="flex-1 font-mono text-[12.5px] bg-paper-raised border border-line rounded-md px-2.5 py-1.5 outline-none focus:border-accent"
+                    />
+                    <button
+                      onClick={async () => {
+                        setShortening(true);
+                        setShortError(null);
+                        const slug = customSlug.trim().toLowerCase() || undefined;
+                        const result = await createShortLink(loadout, slug);
+                        setShortening(false);
+                        if (result?.url) setShortUrl(result.url);
+                        else setShortError(result?.error ?? "share service unreachable — long link still works");
+                      }}
+                      disabled={
+                        shortening ||
+                        (customSlug.trim().length > 0 && slugCheck !== null && !slugCheck.available)
+                      }
+                      className="shrink-0 text-[12.5px] font-medium border border-line-strong hover:border-ink-faint rounded-md px-3 py-1.5 disabled:opacity-50"
+                    >
+                      {shortening ? "Shortening…" : "Make it short"}
+                    </button>
+                  </div>
+                  {customSlug.trim().length >= 3 && slugCheck && (
+                    <div
+                      className={`text-[12px] mt-1 ${slugCheck.available ? "text-ok" : "text-warn"}`}
+                    >
+                      {slugCheck.available
+                        ? `✓ /s/${customSlug.trim().toLowerCase()} is available`
+                        : !slugCheck.valid
+                          ? "✕ 3–32 chars: a–z, 0–9, hyphens inside"
+                          : slugCheck.reserved
+                            ? "🔒 reserved"
+                            : "✕ taken"}
+                    </div>
+                  )}
+                  {shortError && <div className="text-[12px] text-warn mt-1">{shortError}</div>}
+                </div>
+              )}
               <div className="flex gap-2">
                 <input
                   readOnly

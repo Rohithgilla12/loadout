@@ -42,6 +42,8 @@ pub fn run() {
             commands::assign_profile,
             commands::apply_project,
             commands::profile_share,
+            commands::share_shorten,
+            commands::check_slug,
             commands::read_loadout_file,
             commands::export_loadout_file,
             commands::apply_loadout_file,

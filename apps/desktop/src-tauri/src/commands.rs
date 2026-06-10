@@ -392,6 +392,79 @@ pub fn profile_share(name: String) -> Result<ProfileShare> {
     })
 }
 
+const SHARE_API: &str = "https://loadout.gilla.fun";
+
+fn share_client(settings: &Settings) -> Result<reqwest::Client> {
+    let mut headers = reqwest::header::HeaderMap::new();
+    if let Some(key) = &settings.share_admin_key {
+        if let Ok(v) = reqwest::header::HeaderValue::from_str(key) {
+            headers.insert("x-loadout-admin", v);
+        }
+    }
+    reqwest::Client::builder()
+        .user_agent(format!("loadout/{}", env!("CARGO_PKG_VERSION")))
+        .default_headers(headers)
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| AppError::Network(e.to_string()))
+}
+
+#[derive(Serialize)]
+pub struct SlugCheck {
+    pub valid: bool,
+    pub reserved: bool,
+    pub available: bool,
+}
+
+#[tauri::command]
+pub async fn check_slug(slug: String) -> Result<SlugCheck> {
+    let settings = state::load_settings()?;
+    let resp = share_client(&settings)?
+        .get(format!("{SHARE_API}/api/slug/{}", slug.to_lowercase()))
+        .send()
+        .await
+        .map_err(|e| AppError::Network(e.to_string()))?;
+    let v: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+    Ok(SlugCheck {
+        valid: v["valid"].as_bool().unwrap_or(false),
+        reserved: v["reserved"].as_bool().unwrap_or(false),
+        available: v["available"].as_bool().unwrap_or(false),
+    })
+}
+
+/// Create a short share link for a profile via loadout.gilla.fun.
+#[tauri::command]
+pub async fn share_shorten(name: String, slug: Option<String>) -> Result<String> {
+    let share = profile_share(name)?;
+    if share.share.skills.is_empty() {
+        return Err(AppError::Invalid(
+            "nothing shareable — local-only skills can't travel in a link".into(),
+        ));
+    }
+    let settings = state::load_settings()?;
+    let mut body = serde_json::to_value(&share.share)?;
+    if let Some(s) = slug.filter(|s| !s.trim().is_empty()) {
+        body["slug"] = serde_json::Value::String(s.trim().to_lowercase());
+    }
+    let resp = share_client(&settings)?
+        .post(format!("{SHARE_API}/api/share"))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| AppError::Network(e.to_string()))?;
+    let status = resp.status();
+    let v: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+    if !status.is_success() {
+        return Err(AppError::Network(
+            v["error"].as_str().unwrap_or("share service error").to_string(),
+        ));
+    }
+    v["url"]
+        .as_str()
+        .map(|s| s.to_string())
+        .ok_or_else(|| AppError::Network("malformed response from share service".into()))
+}
+
 /// Apply a reviewed loadout.json: install everything it declares into a
 /// profile named after it, then assign that profile to the project.
 /// Only ever called after the explicit review screen (F7/F3).

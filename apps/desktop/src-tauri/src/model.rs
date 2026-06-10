@@ -75,6 +75,9 @@ pub struct Settings {
     pub base_profile: Option<String>,
     #[serde(default = "default_true")]
     pub check_updates_on_launch: bool,
+    /// Unlocks reserved share slugs on loadout.gilla.fun.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub share_admin_key: Option<String>,
 }
 
 fn default_true() -> bool {
@@ -83,7 +86,7 @@ fn default_true() -> bool {
 
 impl Default for Settings {
     fn default() -> Self {
-        Self { base_profile: None, check_updates_on_launch: true }
+        Self { base_profile: None, check_updates_on_launch: true, share_admin_key: None }
     }
 }
 

@@ -67,22 +67,57 @@ export function readShareFromHash(): SharedLoadout | null {
 }
 
 export function readSlugFromPath(): string | null {
-  const m = location.pathname.match(/^\/s\/([a-z0-9]{4,16})$/);
+  const m = location.pathname.match(/^\/s\/([a-z0-9-]{3,32})$/);
   return m ? m[1] : null;
 }
 
-/** Create a short link via the Workers API. Returns null when the API is
- *  unreachable — callers fall back to the self-contained #L= link. */
-export async function createShortLink(loadout: SharedLoadout): Promise<string | null> {
+const ADMIN_STORAGE_KEY = "loadout-admin-key";
+
+/** `#admin=KEY` once in the URL stores the admin key locally, then disappears. */
+export function captureAdminKey() {
+  const m = location.hash.match(/^#admin=(.+)$/);
+  if (m) {
+    localStorage.setItem(ADMIN_STORAGE_KEY, m[1]);
+    history.replaceState(null, "", location.pathname);
+  }
+}
+
+export function adminHeaders(): Record<string, string> {
+  const key = localStorage.getItem(ADMIN_STORAGE_KEY);
+  return key ? { "x-loadout-admin": key } : {};
+}
+
+export interface SlugCheck {
+  valid: boolean;
+  reserved: boolean;
+  available: boolean;
+}
+
+export async function checkSlug(slug: string): Promise<SlugCheck | null> {
+  try {
+    const resp = await fetch(`/api/slug/${encodeURIComponent(slug)}`, { headers: adminHeaders() });
+    if (!resp.ok) return null;
+    return (await resp.json()) as SlugCheck;
+  } catch {
+    return null;
+  }
+}
+
+/** Create a short link via the Workers API. Returns the url, or an error
+ *  string the UI can show; null when the API is unreachable (fall back to #L=). */
+export async function createShortLink(
+  loadout: SharedLoadout,
+  slug?: string,
+): Promise<{ url?: string; error?: string } | null> {
   try {
     const resp = await fetch("/api/share", {
       method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(loadout),
+      headers: { "content-type": "application/json", ...adminHeaders() },
+      body: JSON.stringify({ ...loadout, ...(slug ? { slug } : {}) }),
     });
-    if (!resp.ok) return null;
-    const data = (await resp.json()) as { url?: string };
-    return typeof data.url === "string" ? data.url : null;
+    const data = (await resp.json().catch(() => ({}))) as { url?: string; error?: string };
+    if (!resp.ok) return { error: data.error ?? `failed (${resp.status})` };
+    return typeof data.url === "string" ? { url: data.url } : null;
   } catch {
     return null;
   }

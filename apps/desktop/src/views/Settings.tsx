@@ -99,6 +99,42 @@ function UpdatesSection({ version }: { version: string }) {
   );
 }
 
+function AdminKeyField({
+  current,
+  onSaved,
+}: {
+  current: import("../lib/types").Settings | null;
+  onSaved: () => void;
+}) {
+  const toast = useToast();
+  const [key, setKey] = useState(current?.share_admin_key ?? "");
+  return (
+    <form
+      className="flex gap-2 max-w-md"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!current) return;
+        try {
+          await api.saveSettings({ ...current, share_admin_key: key.trim() || null });
+          toast(key.trim() ? "Admin key saved" : "Admin key cleared", "ok");
+          onSaved();
+        } catch (err) {
+          toast(String(err), "error");
+        }
+      }}
+    >
+      <Input
+        type="password"
+        value={key}
+        onChange={(e) => setKey(e.target.value)}
+        placeholder="lk_…"
+        spellCheck={false}
+      />
+      <Button type="submit">Save</Button>
+    </form>
+  );
+}
+
 export function SettingsView() {
   const toast = useToast();
   const queryClient = useQueryClient();
@@ -182,6 +218,15 @@ export function SettingsView() {
             Create skill
           </Button>
         </form>
+      </section>
+
+      <section className="mb-7">
+        <SectionLabel>Sharing</SectionLabel>
+        <p className="text-[12px] text-ink-faint mb-2">
+          Admin key for loadout.gilla.fun — unlocks reserved short-link slugs (typescript, go,
+          dev…). Leave empty unless you have one.
+        </p>
+        <AdminKeyField current={o?.settings ?? null} onSaved={() => queryClient.invalidateQueries({ queryKey: ["overview"] })} />
       </section>
 
       <section className="mb-7">

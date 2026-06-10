@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { api, describeApply } from "../lib/api";
+import type { SlugCheck } from "../lib/types";
 import type { Profile } from "../lib/types";
-import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Select, cx } from "../components/ui";
+import { Badge, Button, EmptyState, Input, Mono, SectionLabel, Select, Spinner, cx } from "../components/ui";
 import { useToast } from "../components/Toast";
 
 export function Profiles() {
@@ -173,22 +174,7 @@ function ProfileDetail({
       ? ` (${skipped.length} local skill${skipped.length === 1 ? "" : "s"} can't travel in a link)`
       : "";
 
-  const shareLink = useMutation({
-    mutationFn: () => api.profileShare(profile.name),
-    onSuccess: async (s) => {
-      if (!s.share.skills.length) {
-        toast("Nothing shareable yet — local-only skills can't travel in a link", "error");
-        return;
-      }
-      const payload = btoa(unescape(encodeURIComponent(JSON.stringify(s.share))))
-        .replace(/\+/g, "-")
-        .replace(/\//g, "_")
-        .replace(/=+$/, "");
-      await openUrl(`https://loadout.gilla.fun/#L=${payload}`);
-      toast(`Opened your shareable loadout${skippedNote(s.skipped_local)}`, "ok");
-    },
-    onError: (e) => toast(String(e), "error"),
-  });
+  const [shareOpen, setShareOpen] = useState(false);
 
   const copyJson = useMutation({
     mutationFn: () => api.profileShare(profile.name),
@@ -223,6 +209,7 @@ function ProfileDetail({
 
   return (
     <div className="flex flex-col h-full rise-in">
+      {shareOpen && <ShareDialog profile={profile.name} onClose={() => setShareOpen(false)} />}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-line">
         <div>
           <div className="flex items-center gap-2">
@@ -248,7 +235,7 @@ function ProfileDetail({
               Make base
             </Button>
           )}
-          <Button onClick={() => shareLink.mutate()} title="Open this profile as a shareable link on loadout.gilla.fun">
+          <Button onClick={() => setShareOpen(true)} title="Create a short share link on loadout.gilla.fun">
             Share…
           </Button>
           <Button onClick={() => copyJson.mutate()} title="Copy loadout.json for committing to a repo">
@@ -337,6 +324,114 @@ function ProfileDetail({
             )}
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ShareDialog({ profile, onClose }: { profile: string; onClose: () => void }) {
+  const toast = useToast();
+  const [slug, setSlug] = useState("");
+  const [check, setCheck] = useState<SlugCheck | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // live availability, debounced
+  useEffect(() => {
+    setCheck(null);
+    const wanted = slug.trim().toLowerCase();
+    if (wanted.length < 3) return;
+    const handle = setTimeout(() => {
+      api.checkSlug(wanted).then(setCheck).catch(() => {});
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [slug]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const create = useMutation({
+    mutationFn: () => api.shareShorten(profile, slug.trim() ? slug.trim().toLowerCase() : null),
+    onSuccess: async (link) => {
+      setUrl(link);
+      await navigator.clipboard.writeText(link).catch(() => {});
+      toast("Short link created and copied", "ok");
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
+
+  const wanted = slug.trim().toLowerCase();
+  const blocked = wanted.length > 0 && check !== null && !check.available;
+
+  return (
+    <div className="fixed inset-0 z-40 bg-ink/20 flex items-start justify-center pt-[22vh]" onClick={onClose}>
+      <div
+        className="rise-in w-[460px] bg-paper-raised border border-line-strong rounded-lg shadow-xl p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="font-semibold text-[14px] mb-1">Share “{profile}”</div>
+        <p className="text-[12px] text-ink-soft mb-3">
+          Creates a short link on loadout.gilla.fun. Leave the slug empty for a random one.
+        </p>
+
+        {url ? (
+          <div className="flex flex-col gap-2">
+            <Input readOnly value={url} onFocus={(e) => e.target.select()} />
+            <div className="flex gap-2">
+              <Button
+                variant="primary"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(url);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                }}
+              >
+                {copied ? "Copied ✓" : "Copy"}
+              </Button>
+              <Button onClick={() => openUrl(url)}>Open</Button>
+              <Button variant="ghost" onClick={onClose} className="ml-auto">Done</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-1.5">
+              <Mono className="shrink-0">loadout.gilla.fun/s/</Mono>
+              <Input
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="custom-slug (optional)"
+                spellCheck={false}
+                autoFocus
+              />
+            </div>
+            <div className="h-5 mt-1 text-[12px]">
+              {wanted.length >= 3 && check && (
+                <span className={check.available ? "text-ok" : "text-warn"}>
+                  {check.available
+                    ? `✓ /s/${wanted} is available`
+                    : !check.valid
+                      ? "✕ 3–32 chars: a–z, 0–9, hyphens inside"
+                      : check.reserved
+                        ? "🔒 reserved slug — set your admin key in Settings to claim it"
+                        : "✕ taken"}
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button
+                variant="primary"
+                disabled={create.isPending || blocked}
+                onClick={() => create.mutate()}
+              >
+                {create.isPending ? <Spinner /> : "Create short link"}
+              </Button>
+              <Button variant="ghost" onClick={onClose} className="ml-auto">Cancel</Button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

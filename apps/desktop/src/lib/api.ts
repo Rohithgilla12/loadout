@@ -14,6 +14,7 @@ import type {
   ResolvedSource,
   Settings,
   SkillDetail,
+  SlugCheck,
   UpdateInfo,
 } from "./types";
 
@@ -36,6 +37,9 @@ export const api = {
     invoke<Profile>("duplicate_profile", { name, newName }),
   deleteProfile: (name: string) => invoke<ApplySummary[]>("delete_profile_cmd", { name }),
   profileShare: (name: string) => invoke<ProfileShare>("profile_share", { name }),
+  shareShorten: (name: string, slug: string | null) =>
+    invoke<string>("share_shorten", { name, slug }),
+  checkSlug: (slug: string) => invoke<SlugCheck>("check_slug", { slug }),
   setBaseProfile: (name: string | null) => invoke<ApplySummary[]>("set_base_profile", { name }),
 
   // projects
