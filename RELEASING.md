@@ -20,6 +20,18 @@ Settings → Secrets and variables → Actions → New repository secret:
 To export the `.p12`: Keychain Access → My Certificates → right-click the
 "Developer ID Application" cert → Export, choose a password.
 
+### Auto-update signing
+
+| Secret | What it is |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | Updater minisign private key (`~/.tauri/loadout-updater.key`) |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Its password (`~/.tauri/loadout-updater.password.txt`) |
+
+The matching public key is committed in `tauri.conf.json` (`plugins.updater.pubkey`).
+The app checks `releases/latest/download/latest.json` on launch and offers a
+one-click "Update & restart" — nothing installs silently. **Back up the key
+files**: lose them and shipped apps can never accept another update.
+
 ## Cutting a release
 
 ```bash

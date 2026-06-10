@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "./lib/api";
 import { ToastProvider } from "./components/Toast";
 import { CommandPalette } from "./components/CommandPalette";
+import { UpdateBanner } from "./components/UpdateBanner";
 import { cx } from "./components/ui";
 import { Library } from "./views/Library";
 import { Profiles } from "./views/Profiles";
@@ -84,7 +85,10 @@ export default function App() {
               </button>
             ))}
           </div>
-          <div className="mt-auto px-4 py-3 border-t border-line text-[11px] text-ink-faint">
+          <div className="mt-auto">
+            <UpdateBanner />
+          </div>
+          <div className="px-4 py-3 border-t border-line text-[11px] text-ink-faint">
             {overview.data && (
               <>
                 <div>

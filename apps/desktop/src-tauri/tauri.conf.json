@@ -32,6 +32,15 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "createUpdaterArtifacts": true
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEM3ODQzREY4OUE4NTBGOApSV1Q0VUtpSjMwTjRETkxhS0xTeUVXNTZnbHZPRmNiVHZ3U3BGaThSQjR3d2FQbld5ZUhoeWhHLwo=",
+      "endpoints": [
+        "https://github.com/Rohithgilla12/loadout/releases/latest/download/latest.json"
+      ]
+    }
   }
 }
