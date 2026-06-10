@@ -34,6 +34,14 @@ apps/
 PRD.md       # the product spec
 ```
 
+## Install
+
+```bash
+brew install --cask rohithgilla12/loadout/loadout
+```
+
+Or grab the signed dmg / AppImage / deb / rpm from [Releases](https://github.com/Rohithgilla12/loadout/releases).
+
 ## Status
 
 🚧 Early development — building in public. See [PRD.md](./PRD.md) for the full plan.

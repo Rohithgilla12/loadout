@@ -47,7 +47,15 @@ The workflow produces:
 
 Then: review the draft release on GitHub, write release notes, publish.
 
-## Homebrew tap (after the first published release)
+## Homebrew tap
+
+Live at [Rohithgilla12/homebrew-loadout](https://github.com/Rohithgilla12/homebrew-loadout)
+(`brew install --cask rohithgilla12/loadout/loadout`). The `update-tap.yml` workflow bumps the
+cask automatically when a release is **published** — it needs a `TAP_GITHUB_TOKEN` repo secret
+(fine-grained PAT with contents:write on homebrew-loadout). Without the secret it skips politely
+and you bump version+sha256 in `Casks/loadout.rb` by hand.
+
+### Original manual notes
 
 Create a `Rohithgilla12/homebrew-loadout` repo with `Casks/loadout.rb`:
 

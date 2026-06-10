@@ -62,7 +62,7 @@ export function Landing() {
               >
                 Download for macOS & Linux
               </a>
-              <span className="font-mono text-[12px] text-ink-faint">free · MIT · no Node required</span>
+              <span className="font-mono text-[12px] text-ink-faint">brew install --cask rohithgilla12/loadout/loadout</span>
             </div>
           </div>
 

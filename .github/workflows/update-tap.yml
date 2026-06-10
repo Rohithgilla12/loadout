@@ -1,0 +1,47 @@
+name: Update Homebrew tap
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  bump-cask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for tap token
+        id: token
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          if [ -z "$TAP_GITHUB_TOKEN" ]; then
+            echo "TAP_GITHUB_TOKEN not set — skipping cask bump (see RELEASING.md)"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute version and dmg sha256
+        if: steps.token.outputs.present == 'true'
+        id: meta
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          VERSION="${TAG#v}"
+          URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/Loadout_${VERSION}_universal.dmg"
+          curl -sL -o loadout.dmg "$URL"
+          SHA=$(shasum -a 256 loadout.dmg | cut -d' ' -f1)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Bump cask in tap
+        if: steps.token.outputs.present == 'true'
+        env:
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+        run: |
+          git clone "https://x-access-token:${TAP_GITHUB_TOKEN}@github.com/Rohithgilla12/homebrew-loadout.git" tap
+          cd tap
+          sed -i "s/^  version \".*\"/  version \"${{ steps.meta.outputs.version }}\"/" Casks/loadout.rb
+          sed -i "s/^  sha256 \".*\"/  sha256 \"${{ steps.meta.outputs.sha }}\"/" Casks/loadout.rb
+          git config user.name "loadout-release-bot"
+          git config user.email "actions@github.com"
+          git commit -am "loadout ${{ steps.meta.outputs.version }}"
+          git push
