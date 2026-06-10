@@ -1,6 +1,6 @@
 [package]
 name = "loadout"
-version = "0.1.0"
+version = "0.1.1"
 description = "Loadout — switchable skill sets for AI coding agents"
 authors = ["Rohith Gilla"]
 license = "MIT"
