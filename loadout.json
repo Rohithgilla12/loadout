@@ -1,0 +1,32 @@
+{
+  "$schema": "https://loadout.dev/schema/v1.json",
+  "profile": "tauri",
+  "extends": [],
+  "skills": [
+    {
+      "source": "vercel-labs/agent-browser",
+      "skill": "agent-browser",
+      "rev": "328ce8a98560ac7bac8fa81f53a718822550b94e"
+    },
+    {
+      "source": "vercel-labs/agent-browser",
+      "skill": "dogfood",
+      "rev": "328ce8a98560ac7bac8fa81f53a718822550b94e"
+    },
+    {
+      "source": "vercel-labs/agent-browser",
+      "skill": "electron",
+      "rev": "328ce8a98560ac7bac8fa81f53a718822550b94e"
+    },
+    {
+      "source": "local",
+      "skill": "hyperframes",
+      "vendored": ".loadout/skills/hyperframes"
+    },
+    {
+      "source": "local",
+      "skill": "react-doctor",
+      "vendored": ".loadout/skills/react-doctor"
+    }
+  ]
+}

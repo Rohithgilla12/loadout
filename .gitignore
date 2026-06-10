@@ -6,3 +6,7 @@ target/
 .env
 .vite/
 gen/schemas/
+# loadout-managed agent skill symlinks (machine-local; loadout.json is the committed artifact)
+.claude/skills/
+.cursor/skills/
+.agents/skills/

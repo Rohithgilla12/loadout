@@ -260,9 +260,7 @@ pub fn assign_profile(path: String, profile: Option<String>) -> Result<ApplySumm
     let project = project.clone();
     state::save_projects(&projects)?;
 
-    let settings = state::load_settings()?;
-    let effective = state::effective_skills(settings.base_profile.as_deref(), project.profile.as_deref())?;
-    let names: Vec<String> = effective.into_iter().map(|(n, _)| n).collect();
+    let names = apply::project_scope_skills(project.profile.as_deref())?;
     apply::apply_scope(&names, Some(&PathBuf::from(&project.path)))
 }
 
@@ -274,9 +272,7 @@ pub fn apply_project(path: String) -> Result<ApplySummary> {
         .iter()
         .find(|p| p.path == path)
         .ok_or_else(|| AppError::NotFound("project not registered".into()))?;
-    let settings = state::load_settings()?;
-    let effective = state::effective_skills(settings.base_profile.as_deref(), project.profile.as_deref())?;
-    let names: Vec<String> = effective.into_iter().map(|(n, _)| n).collect();
+    let names = apply::project_scope_skills(project.profile.as_deref())?;
     apply::apply_scope(&names, Some(&PathBuf::from(&project.path)))
 }
 

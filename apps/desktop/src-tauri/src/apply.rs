@@ -127,6 +127,16 @@ fn resolve_targets(skills: &[String], lock: &LockFile) -> (Vec<(String, PathBuf)
     (targets, missing)
 }
 
+/// Skills materialized at project scope: the project profile only. Base-profile
+/// skills live in the global agent dirs, which agents already merge with project
+/// dirs — duplicating them into the repo would pollute it with symlinks.
+pub fn project_scope_skills(profile: Option<&str>) -> Result<Vec<String>> {
+    match profile {
+        Some(p) => state::resolve_profile_skills(p),
+        None => Ok(vec![]),
+    }
+}
+
 /// Apply a skill set to a scope. scope: None = global agent dirs, Some(path) = project dirs.
 pub fn apply_scope(skills: &[String], project: Option<&Path>) -> Result<ApplySummary> {
     let lock = state::load_lock()?;
@@ -186,11 +196,7 @@ pub fn reapply_all() -> Result<Vec<ApplySummary>> {
         if !path.is_dir() {
             continue; // moved/deleted project: Doctor reports it, apply skips it
         }
-        let effective = state::effective_skills(
-            settings.base_profile.as_deref(),
-            project.profile.as_deref(),
-        )?;
-        let names: Vec<String> = effective.into_iter().map(|(n, _)| n).collect();
+        let names = project_scope_skills(project.profile.as_deref())?;
         out.push(apply_scope(&names, Some(&path))?);
     }
     Ok(out)
@@ -601,6 +607,30 @@ mod tests {
         // idempotent: nothing left to adopt, nothing double-counted
         let summary2 = migrate_entries(&[], true, "everything", None).unwrap();
         assert_eq!((summary2.adopted, summary2.replaced), (0, 0));
+    }
+
+    #[test]
+    fn project_scope_excludes_base_profile() {
+        let _ctx = setup();
+        state::save_profile(&Profile {
+            name: "base".into(),
+            extends: None,
+            skills: vec!["alpha".into(), "beta".into()],
+        })
+        .unwrap();
+        state::save_profile(&Profile {
+            name: "proj".into(),
+            extends: None,
+            skills: vec!["gamma".into()],
+        })
+        .unwrap();
+        let mut settings = state::load_settings().unwrap();
+        settings.base_profile = Some("base".into());
+        state::save_settings(&settings).unwrap();
+
+        // base skills live in global agent dirs; project dirs get the project profile only
+        assert_eq!(project_scope_skills(Some("proj")).unwrap(), vec!["gamma".to_string()]);
+        assert!(project_scope_skills(None).unwrap().is_empty());
     }
 
     #[test]
