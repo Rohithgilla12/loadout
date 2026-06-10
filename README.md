@@ -36,6 +36,21 @@ Loadout fixes that with one primitive: **profiles** — named, switchable, share
 - **Safe updates** — pin-by-default, notify, diff on demand, one-click rollback
 - **No Node required** — single native binary (Tauri 2 + Rust)
 
+## CLI
+
+The same engine, scriptable. Install with `cargo install --path crates/loadout-cli` (prebuilt binaries coming to releases):
+
+```bash
+loadout status                      # detected agents, base profile, counts
+loadout list                        # profiles (* marks the active base)
+loadout switch typescript           # set the base profile + re-apply everywhere
+loadout switch web --project .      # assign a profile to this project
+loadout check                       # CI: does this repo match its loadout.json? exit 1 on drift
+loadout doctor                      # health report: foreign skills, broken store, missing projects
+```
+
+Every command takes `--json` for scripting. `loadout check` runs structural checks (vendored skills present, file valid) even on machines with no Loadout state — drop it in CI to catch teammates drifting from the committed `loadout.json`.
+
 ## How it works
 
 Skill content lives in a content-addressed store at `~/.loadout/store`. Agent skill directories (`~/.claude/skills`, `~/.cursor/skills`, …) only ever contain symlinks into the store. Switching a profile is a symlink reconciliation — fast, atomic in effect, and fully reversible.
@@ -46,8 +61,11 @@ Skill content lives in a content-addressed store at `~/.loadout/store`. Agent sk
 
 ```
 apps/
-  desktop/   # the Tauri 2 desktop app (Rust core + React UI)
+  desktop/   # the Tauri 2 desktop app (React UI on the core engine)
   web/       # loadout.gilla.fun — marketing site + loadout sharing
+crates/
+  loadout-core/   # the engine: store, profiles, symlink reconciliation
+  loadout-cli/    # `loadout` — the CLI on the same engine
 PRD.md       # the product spec
 ROADMAP.md   # what's next, and why
 ```

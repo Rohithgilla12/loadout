@@ -22,12 +22,6 @@ pub enum AppError {
     App(String),
 }
 
-impl From<tauri::Error> for AppError {
-    fn from(e: tauri::Error) -> Self {
-        AppError::App(e.to_string())
-    }
-}
-
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
     where

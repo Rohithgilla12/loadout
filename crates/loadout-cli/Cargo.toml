@@ -1,0 +1,21 @@
+[package]
+name = "loadout-cli"
+version = "0.2.0"
+description = "loadout — switch AI-agent skill profiles from the command line"
+authors = ["Rohith Gilla"]
+license = "MIT"
+repository = "https://github.com/Rohithgilla12/loadout"
+edition = "2021"
+
+[[bin]]
+name = "loadout"
+path = "src/main.rs"
+
+[dependencies]
+loadout-core = { path = "../loadout-core" }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]
+tempfile = "3"

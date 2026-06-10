@@ -18,7 +18,8 @@ pub fn rebuild(app: &AppHandle) {
     }
 }
 
-fn rebuild_inner(app: &AppHandle) -> Result<()> {
+// mixes engine errors (AppError) and tauri menu errors, so Box<dyn Error>
+fn rebuild_inner(app: &AppHandle) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let settings = state::load_settings()?;
     let profiles = state::list_profiles()?;
     let projects = state::load_projects()?;

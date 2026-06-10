@@ -10,3 +10,4 @@ gen/schemas/
 .claude/skills/
 .cursor/skills/
 .agents/skills/
+.playwright-mcp/
