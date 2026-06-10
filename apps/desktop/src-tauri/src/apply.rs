@@ -305,6 +305,7 @@ pub fn migrate_entries(
     entries: &[ForeignSkill],
     replace: bool,
     profile_name: &str,
+    on_progress: Option<&dyn Fn(u32, u32, &str)>,
 ) -> Result<MigrateSummary> {
     state::validate_name(profile_name)?;
     let mut summary = MigrateSummary {
@@ -323,8 +324,12 @@ pub fn migrate_entries(
     }
 
     let mut profile_names: Vec<String> = vec![];
-    for (canonical, group) in &groups {
+    let total = groups.len() as u32;
+    for (i, (canonical, group)) in groups.iter().enumerate() {
         let name = group[0].name.clone();
+        if let Some(f) = on_progress {
+            f(i as u32 + 1, total, &name);
+        }
         if state::validate_name(&name).is_err() {
             summary.skipped.push(format!("{name}: invalid skill name"));
             continue;
@@ -575,7 +580,7 @@ mod tests {
             entry(&agents_dir.join("my-skill"), false),
         ];
 
-        let summary = migrate_entries(&entries, true, "everything").unwrap();
+        let summary = migrate_entries(&entries, true, "everything", None).unwrap();
         assert_eq!(summary.adopted, 1, "two paths, one canonical skill");
         assert_eq!(summary.replaced, 2, "both originals taken over");
 
@@ -594,7 +599,7 @@ mod tests {
         assert!(!agents_dir.join("my-skill").exists());
 
         // idempotent: nothing left to adopt, nothing double-counted
-        let summary2 = migrate_entries(&[], true, "everything").unwrap();
+        let summary2 = migrate_entries(&[], true, "everything", None).unwrap();
         assert_eq!((summary2.adopted, summary2.replaced), (0, 0));
     }
 

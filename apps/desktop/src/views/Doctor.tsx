@@ -1,8 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { listen } from "@tauri-apps/api/event";
 import { api } from "../lib/api";
-import { Badge, Button, Input, Mono, SectionLabel, Spinner } from "../components/ui";
+import { Badge, Button, Input, Mono, SectionLabel, Spinner, cx } from "../components/ui";
 import { useToast } from "../components/Toast";
+
+interface MigrateProgress {
+  stage: "backup" | "scan" | "import" | "apply" | "done";
+  done: number;
+  total: number;
+  detail: string;
+}
+
+const STAGE_LABELS: Record<MigrateProgress["stage"], string> = {
+  backup: "Backing up agent directories",
+  scan: "Scanning agent directories",
+  import: "Importing skills",
+  apply: "Re-applying symlinks",
+  done: "Done",
+};
 
 export function Doctor() {
   const toast = useToast();
@@ -12,11 +28,20 @@ export function Doctor() {
   const [backupFirst, setBackupFirst] = useState(true);
   const [importProfile, setImportProfile] = useState("everything");
   const [lastBackup, setLastBackup] = useState<string | null>(null);
+  const [progress, setProgress] = useState<MigrateProgress | null>(null);
+
+  useEffect(() => {
+    const unlisten = listen<MigrateProgress>("migrate-progress", (e) => setProgress(e.payload));
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
 
   const migrate = useMutation({
     mutationFn: () =>
       api.migrateAll(replaceOriginals, importProfile.trim() || "everything", backupFirst),
     onSuccess: (s) => {
+      setProgress(null);
       setLastBackup(s.backup_path ?? null);
       toast(
         `Imported ${s.adopted} skills into “${s.profile}”${s.replaced ? `, took over ${s.replaced} originals` : ""}${s.skipped.length ? ` (${s.skipped.length} skipped)` : ""}${s.backup_path ? " — backup saved" : ""}`,
@@ -24,7 +49,10 @@ export function Doctor() {
       );
       queryClient.invalidateQueries();
     },
-    onError: (e) => toast(String(e), "error"),
+    onError: (e) => {
+      setProgress(null);
+      toast(String(e), "error");
+    },
   });
 
   const adopt = useMutation({
@@ -122,6 +150,41 @@ export function Doctor() {
             {lastBackup && (
               <div className="mt-2 text-[12px] text-ink-soft">
                 Backup saved: <Mono>{lastBackup}</Mono>
+              </div>
+            )}
+
+            {/* live progress while the transfer runs */}
+            {migrate.isPending && (
+              <div className="mt-3 rise-in">
+                <div className="flex items-center justify-between text-[12px] mb-1">
+                  <span className="font-medium">
+                    {STAGE_LABELS[progress?.stage ?? "scan"]}
+                    {progress?.stage === "import" && progress.total > 0 && (
+                      <span className="text-ink-faint font-normal">
+                        {" "}— {progress.done} of {progress.total}
+                      </span>
+                    )}
+                  </span>
+                  {progress?.stage === "import" && progress.detail && (
+                    <Mono className="truncate max-w-[260px]">{progress.detail}</Mono>
+                  )}
+                </div>
+                <div className="h-1.5 rounded-full bg-paper-sunken border border-line overflow-hidden">
+                  <div
+                    className={cx(
+                      "h-full bg-accent rounded-full transition-[width] duration-200 ease-out",
+                      (!progress || progress.total === 0) && "animate-pulse",
+                    )}
+                    style={{
+                      width:
+                        progress?.stage === "import" && progress.total > 0
+                          ? `${Math.round((progress.done / progress.total) * 100)}%`
+                          : progress?.stage === "apply"
+                            ? "96%"
+                            : "12%",
+                    }}
+                  />
+                </div>
               </div>
             )}
             <div className="flex items-center gap-2 mt-3">

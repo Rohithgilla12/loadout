@@ -726,13 +726,40 @@ pub fn adopt_skill(dir: String) -> Result<LockEntry> {
     apply::adopt_foreign(&dir)
 }
 
+#[derive(Clone, Serialize)]
+struct MigrateProgress {
+    stage: String,
+    done: u32,
+    total: u32,
+    detail: String,
+}
+
 /// Onboarding: import every global foreign skill at once, then re-apply so
 /// managed symlinks land where originals were replaced. With `backup`, every
 /// detected global agent skills dir is tarred first — before any mutation.
+/// Emits `migrate-progress` events the panel renders live.
 #[tauri::command]
-pub fn migrate_all(replace: bool, profile_name: String, backup: bool) -> Result<apply::MigrateSummary> {
+pub fn migrate_all(
+    app: tauri::AppHandle,
+    replace: bool,
+    profile_name: String,
+    backup: bool,
+) -> Result<apply::MigrateSummary> {
+    use tauri::Emitter;
+    let emit = |stage: &str, done: u32, total: u32, detail: &str| {
+        let _ = app.emit(
+            "migrate-progress",
+            MigrateProgress {
+                stage: stage.into(),
+                done,
+                total,
+                detail: detail.into(),
+            },
+        );
+    };
     let mut backup_path = None;
     if backup {
+        emit("backup", 0, 0, "Backing up agent skill directories…");
         let home = crate::agents::home_dir();
         let rel: Vec<String> = crate::agents::detected_global_agents()
             .iter()
@@ -748,13 +775,17 @@ pub fn migrate_all(replace: bool, profile_name: String, backup: bool) -> Result<
             backup_path = Some(dest.to_string_lossy().to_string());
         }
     }
+    emit("scan", 0, 0, "Scanning agent directories…");
     let foreign: Vec<ForeignSkill> = apply::scan_foreign()?
         .into_iter()
         .filter(|f| f.scope == "global")
         .collect();
-    let mut summary = apply::migrate_entries(&foreign, replace, &profile_name)?;
+    let on_progress = |done: u32, total: u32, name: &str| emit("import", done, total, name);
+    let mut summary = apply::migrate_entries(&foreign, replace, &profile_name, Some(&on_progress))?;
     summary.backup_path = backup_path;
+    emit("apply", 0, 0, "Re-applying symlinks across agents…");
     apply::reapply_all()?;
+    emit("done", 1, 1, "");
     Ok(summary)
 }
 
