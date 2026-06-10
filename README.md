@@ -4,6 +4,8 @@
 
 > Working on a TypeScript frontend? Activate the `typescript` profile. Switching to a Go backend? One click swaps the whole skill set — instantly, offline, via symlinks.
 
+![Loadout share page](docs/share.png)
+
 ## Why
 
 Skills today are all-on, all-the-time. Every installed skill pollutes every agent session's context. There's no single view of what's installed where, no version pinning, no update notifications, no rollback, and no way for a team to declare "this project uses these skills."

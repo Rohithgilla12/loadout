@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-paper: oklch(0.975 0.004 85);
+  --color-paper-raised: oklch(0.99 0.003 85);
+  --color-paper-sunken: oklch(0.955 0.005 85);
+  --color-ink: oklch(0.235 0.012 60);
+  --color-ink-soft: oklch(0.45 0.012 60);
+  --color-ink-faint: oklch(0.62 0.01 60);
+  --color-line: oklch(0.88 0.008 80);
+  --color-line-strong: oklch(0.78 0.012 75);
+
+  --color-accent: oklch(0.66 0.19 42);
+  --color-accent-deep: oklch(0.56 0.17 42);
+  --color-accent-wash: oklch(0.95 0.03 50);
+
+  --color-ok: oklch(0.62 0.13 150);
+  --color-warn: oklch(0.72 0.14 80);
+  --color-warn-wash: oklch(0.96 0.05 85);
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-accent-wash);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rise-in {
+  animation: rise-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.rise-in-1 { animation-delay: 0.06s; }
+.rise-in-2 { animation-delay: 0.12s; }
+.rise-in-3 { animation-delay: 0.18s; }
+
+/* subtle blueprint grid for hero sections */
+.blueprint {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
+}

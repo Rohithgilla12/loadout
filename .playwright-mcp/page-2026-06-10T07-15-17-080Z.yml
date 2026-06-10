@@ -1,0 +1,54 @@
+- generic [ref=e103]:
+  - banner [ref=e104]:
+    - link "Loadout" [ref=e105] [cursor=pointer]:
+      - /url: "#"
+      - generic [ref=e107]: Loadout
+    - link "Share yours →" [ref=e108] [cursor=pointer]:
+      - /url: "#share"
+  - main [ref=e109]:
+    - generic [ref=e110]: SHARED LOADOUT
+    - heading "Rohith's typescript loadout" [level=1] [ref=e111]
+    - paragraph [ref=e112]: “My daily frontend kit — React, design and testing.”
+    - generic [ref=e113]:
+      - generic [ref=e114]:
+        - generic [ref=e115]: 3 skills · 3 sources
+        - generic [ref=e116]: pinned where noted
+      - generic [ref=e117]:
+        - generic [ref=e118]: "01"
+        - generic [ref=e119]:
+          - generic [ref=e120]: vercel-react-best-practices
+          - generic [ref=e121]: vercel-labs/agent-skills @ 9f3c2ab
+        - link "repo ↗" [ref=e122] [cursor=pointer]:
+          - /url: https://github.com/vercel-labs/agent-skills
+      - generic [ref=e123]:
+        - generic [ref=e124]: "02"
+        - generic [ref=e125]:
+          - generic [ref=e126]: frontend-design
+          - generic [ref=e127]: anthropics/skills @ 1c44d01
+        - link "repo ↗" [ref=e128] [cursor=pointer]:
+          - /url: https://github.com/anthropics/skills
+      - generic [ref=e129]:
+        - generic [ref=e130]: "03"
+        - generic [ref=e131]:
+          - generic [ref=e132]: test-driven-development
+          - generic [ref=e133]: obra/superpowers
+        - link "repo ↗" [ref=e134] [cursor=pointer]:
+          - /url: https://github.com/obra/superpowers
+    - generic [ref=e135]:
+      - generic [ref=e136]:
+        - heading "Install with Loadout" [level=3] [ref=e137]
+        - paragraph [ref=e138]:
+          - text: Save this as
+          - code [ref=e139]: loadout.json
+          - text: in your repo, then open the project in Loadout and hit “Review & apply”.
+        - button "Copy loadout.json" [ref=e140]
+      - generic [ref=e141]:
+        - heading "Or use the skills CLI" [level=3] [ref=e142]
+        - paragraph [ref=e143]:
+          - text: No Loadout yet? Install each skill with
+          - code [ref=e144]: npx skills
+          - text: ":"
+        - button "Copy CLI commands" [ref=e145]
+    - generic [ref=e146]:
+      - strong [ref=e147]: "Before you install:"
+      - text: skills are instructions injected into your coding agent. Review each repo — Loadout shows rendered SKILL.md and flags executable files before anything lands on disk.
