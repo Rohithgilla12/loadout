@@ -80,7 +80,9 @@ export function Doctor() {
   const r = report.data;
   if (!r) return null;
 
-  const healthy = !r.foreign.length && !r.missing_projects.length && !r.broken_store.length;
+  const overlapCount = r.overlap.near_duplicates.length + r.overlap.contested.length;
+  const healthy =
+    !r.foreign.length && !r.missing_projects.length && !r.broken_store.length && !overlapCount;
 
   return (
     <div className="p-5 max-w-3xl">
@@ -250,6 +252,45 @@ export function Doctor() {
               <Badge key={name} tone="danger">{name}</Badge>
             ))}
           </div>
+        </section>
+      )}
+
+      {overlapCount > 0 && (
+        <section className="mb-6">
+          <SectionLabel>Redundancy report</SectionLabel>
+          <p className="text-[12px] text-ink-faint mb-2">
+            Agents pick skills by description. Skills whose descriptions overlap heavily, or that
+            claim the same trigger words, make triggering unpredictable — consider merging them or
+            sharpening the “Use when…” phrasing.
+          </p>
+          {r.overlap.near_duplicates.length > 0 && (
+            <div className="border border-line rounded-lg overflow-hidden mb-3">
+              {r.overlap.near_duplicates.map((p) => (
+                <div
+                  key={`${p.a}::${p.b}`}
+                  className="flex items-center justify-between px-3.5 py-2 border-b border-line/60 last:border-0"
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-medium text-[13px]">{p.a}</span>
+                    <span className="text-ink-faint text-[12px]">↔</span>
+                    <span className="font-medium text-[13px]">{p.b}</span>
+                    <Badge tone="warn">{Math.round(p.similarity * 100)}% similar</Badge>
+                  </div>
+                  <Mono className="truncate max-w-[280px] ml-3">{p.shared.join(", ")}</Mono>
+                </div>
+              ))}
+            </div>
+          )}
+          {r.overlap.contested.length > 0 && (
+            <div className="flex flex-col gap-1">
+              {r.overlap.contested.map((c) => (
+                <div key={c.keyword} className="flex items-center gap-2 text-[12.5px]">
+                  <Badge tone="warn">{c.keyword}</Badge>
+                  <span className="text-ink-soft truncate">claimed by {c.skills.join(", ")}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

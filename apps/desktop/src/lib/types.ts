@@ -121,11 +121,29 @@ export interface MigrateSummary {
   backup_path?: string | null;
 }
 
+export interface OverlapPair {
+  a: string;
+  b: string;
+  similarity: number;
+  shared: string[];
+}
+
+export interface ContestedKeyword {
+  keyword: string;
+  skills: string[];
+}
+
+export interface OverlapReport {
+  near_duplicates: OverlapPair[];
+  contested: ContestedKeyword[];
+}
+
 export interface DoctorReport {
   foreign: ForeignSkill[];
   missing_projects: string[];
   broken_store: string[];
   recovered_journal: boolean;
+  overlap: OverlapReport;
 }
 
 export interface Settings {

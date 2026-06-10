@@ -2,7 +2,9 @@ mod commands;
 mod tray;
 
 // the engine lives in loadout-core; re-export so `crate::apply` etc. resolve
-pub use loadout_core::{agents, apply, error, gitops, model, registry, rules, state, store, usage};
+pub use loadout_core::{
+    agents, apply, error, gitops, model, overlap, registry, rules, state, store, usage,
+};
 
 /// Internal APIs re-exported for integration tests only.
 pub mod test_support {

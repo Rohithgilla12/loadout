@@ -7,6 +7,7 @@ pub mod apply;
 pub mod error;
 pub mod gitops;
 pub mod model;
+pub mod overlap;
 pub mod registry;
 pub mod rules;
 pub mod state;

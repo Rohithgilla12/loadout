@@ -852,6 +852,7 @@ pub struct DoctorReport {
     pub missing_projects: Vec<String>,
     pub broken_store: Vec<String>,
     pub recovered_journal: bool,
+    pub overlap: crate::overlap::OverlapReport,
 }
 
 #[tauri::command]
@@ -875,6 +876,7 @@ pub fn doctor() -> Result<DoctorReport> {
         missing_projects,
         broken_store,
         recovered_journal: recovered,
+        overlap: crate::overlap::analyze(&lock),
     })
 }
 

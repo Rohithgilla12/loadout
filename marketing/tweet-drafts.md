@@ -15,3 +15,15 @@ ideally as replies to the launch thread.
 > Same Rust engine as the app, now scriptable. Dotfiles people, this one's for you.
 
 (attach: terminal screenshot of `loadout status` + `loadout switch`)
+
+## 2 — auto-activation (shipped, 0d30534)
+
+> Loadout now does direnv-for-skills.
+>
+> Register a project → it detects go.mod, package.json, Cargo.toml… and
+> suggests the matching profile. One click to accept, or flip on "auto"
+> per project and it just happens.
+>
+> Your agent walks into a Go repo carrying Go skills. As it should.
+
+(attach: screenshot of the suggestion banner in Projects)

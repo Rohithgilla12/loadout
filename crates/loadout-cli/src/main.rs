@@ -388,6 +388,7 @@ struct DoctorOut {
     broken_store: Vec<String>,
     missing_projects: Vec<String>,
     foreign: Vec<ForeignSkill>,
+    overlap: loadout_core::overlap::OverlapReport,
 }
 
 fn doctor(json: bool) -> Result<i32> {
@@ -406,10 +407,17 @@ fn doctor(json: bool) -> Result<i32> {
         .map(|p| p.path.clone())
         .collect();
     let foreign = apply::scan_foreign()?;
+    let overlap = loadout_core::overlap::analyze(&lock);
     let unhealthy = !broken_store.is_empty() || !missing_projects.is_empty();
 
     if json {
-        let out = DoctorOut { recovered_journal: recovered, broken_store, missing_projects, foreign };
+        let out = DoctorOut {
+            recovered_journal: recovered,
+            broken_store,
+            missing_projects,
+            foreign,
+            overlap,
+        };
         println!("{}", serde_json::to_string_pretty(&out)?);
         return Ok(if unhealthy { 1 } else { 0 });
     }
@@ -428,6 +436,18 @@ fn doctor(json: bool) -> Result<i32> {
         foreign.len(),
         unmanaged
     );
+    for p in &overlap.near_duplicates {
+        println!(
+            "! near-duplicate descriptions: {} ↔ {} ({}% similar; both claim {})",
+            p.a,
+            p.b,
+            (p.similarity * 100.0) as u32,
+            p.shared.join(", ")
+        );
+    }
+    for c in overlap.contested.iter().take(5) {
+        println!("! '{}' claimed by {}", c.keyword, c.skills.join(", "));
+    }
     println!("{}", if unhealthy { "issues found" } else { "healthy" });
     Ok(if unhealthy { 1 } else { 0 })
 }
