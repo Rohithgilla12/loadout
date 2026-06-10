@@ -1,6 +1,8 @@
 # Loadout
 
-**Switchable skill sets for AI coding agents.** · [loadout.gilla.fun](https://loadout.gilla.fun) A fast, open-source desktop app for managing the `SKILL.md`-based skills used by Claude Code, Cursor, Codex, GitHub Copilot, and friends.
+**Switchable skill sets for AI coding agents** · [loadout.gilla.fun](https://loadout.gilla.fun)
+
+A fast, open-source desktop app for managing the `SKILL.md`-based skills used by Claude Code, Cursor, Codex, GitHub Copilot, and friends.
 
 > Working on a TypeScript frontend? Activate the `typescript` profile. Switching to a Go backend? One click swaps the whole skill set — instantly, offline, via symlinks.
 
