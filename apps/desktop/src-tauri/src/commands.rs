@@ -727,14 +727,33 @@ pub fn adopt_skill(dir: String) -> Result<LockEntry> {
 }
 
 /// Onboarding: import every global foreign skill at once, then re-apply so
-/// managed symlinks land where originals were replaced.
+/// managed symlinks land where originals were replaced. With `backup`, every
+/// detected global agent skills dir is tarred first — before any mutation.
 #[tauri::command]
-pub fn migrate_all(replace: bool, profile_name: String) -> Result<apply::MigrateSummary> {
+pub fn migrate_all(replace: bool, profile_name: String, backup: bool) -> Result<apply::MigrateSummary> {
+    let mut backup_path = None;
+    if backup {
+        let home = crate::agents::home_dir();
+        let rel: Vec<String> = crate::agents::detected_global_agents()
+            .iter()
+            .map(|a| a.global_skills_dir.clone())
+            .filter(|d| home.join(d).is_dir())
+            .collect();
+        if !rel.is_empty() {
+            let stamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
+            let dest = crate::state::loadout_root()
+                .join("backups")
+                .join(format!("pre-migration-{stamp}.tar.gz"));
+            apply::backup_dirs(&home, &rel, &dest)?;
+            backup_path = Some(dest.to_string_lossy().to_string());
+        }
+    }
     let foreign: Vec<ForeignSkill> = apply::scan_foreign()?
         .into_iter()
         .filter(|f| f.scope == "global")
         .collect();
-    let summary = apply::migrate_entries(&foreign, replace, &profile_name)?;
+    let mut summary = apply::migrate_entries(&foreign, replace, &profile_name)?;
+    summary.backup_path = backup_path;
     apply::reapply_all()?;
     Ok(summary)
 }

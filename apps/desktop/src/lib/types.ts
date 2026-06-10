@@ -110,6 +110,7 @@ export interface MigrateSummary {
   replaced: number;
   skipped: string[];
   profile: string;
+  backup_path?: string | null;
 }
 
 export interface DoctorReport {

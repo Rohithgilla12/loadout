@@ -9,13 +9,17 @@ export function Doctor() {
   const queryClient = useQueryClient();
   const report = useQuery({ queryKey: ["doctor"], queryFn: api.doctor });
   const [replaceOriginals, setReplaceOriginals] = useState(true);
+  const [backupFirst, setBackupFirst] = useState(true);
   const [importProfile, setImportProfile] = useState("everything");
+  const [lastBackup, setLastBackup] = useState<string | null>(null);
 
   const migrate = useMutation({
-    mutationFn: () => api.migrateAll(replaceOriginals, importProfile.trim() || "everything"),
+    mutationFn: () =>
+      api.migrateAll(replaceOriginals, importProfile.trim() || "everything", backupFirst),
     onSuccess: (s) => {
+      setLastBackup(s.backup_path ?? null);
       toast(
-        `Imported ${s.adopted} skills into “${s.profile}”${s.replaced ? `, took over ${s.replaced} originals` : ""}${s.skipped.length ? ` (${s.skipped.length} skipped)` : ""}`,
+        `Imported ${s.adopted} skills into “${s.profile}”${s.replaced ? `, took over ${s.replaced} originals` : ""}${s.skipped.length ? ` (${s.skipped.length} skipped)` : ""}${s.backup_path ? " — backup saved" : ""}`,
         "ok",
       );
       queryClient.invalidateQueries();
@@ -90,6 +94,20 @@ export function Doctor() {
             <label className="flex items-center gap-2 mt-3 text-[12.5px]">
               <input
                 type="checkbox"
+                checked={backupFirst}
+                onChange={(e) => setBackupFirst(e.target.checked)}
+                className="accent-(--color-accent)"
+              />
+              <span>
+                Back up agent skill directories first{" "}
+                <span className="text-ink-faint">
+                  (tar.gz of every agent dir, saved under ~/.loadout/backups, before anything moves)
+                </span>
+              </span>
+            </label>
+            <label className="flex items-center gap-2 mt-1.5 text-[12.5px]">
+              <input
+                type="checkbox"
                 checked={replaceOriginals}
                 onChange={(e) => setReplaceOriginals(e.target.checked)}
                 className="accent-(--color-accent)"
@@ -101,6 +119,11 @@ export function Doctor() {
                 </span>
               </span>
             </label>
+            {lastBackup && (
+              <div className="mt-2 text-[12px] text-ink-soft">
+                Backup saved: <Mono>{lastBackup}</Mono>
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-3">
               <span className="text-[12.5px] text-ink-soft">Profile name</span>
               <Input

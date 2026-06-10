@@ -264,6 +264,33 @@ pub struct MigrateSummary {
     pub replaced: u32,
     pub skipped: Vec<String>,
     pub profile: String,
+    pub backup_path: Option<String>,
+}
+
+/// Tar the given directories (paths relative to `base`) into `dest`.
+/// Symlinks are preserved as symlinks — a faithful restore point.
+pub fn backup_dirs(base: &Path, rel_dirs: &[String], dest: &Path) -> Result<()> {
+    if rel_dirs.is_empty() {
+        return Err(AppError::Invalid("nothing to back up".into()));
+    }
+    if let Some(parent) = dest.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let mut cmd = std::process::Command::new("tar");
+    cmd.arg("-czf").arg(dest).arg("-C").arg(base);
+    for d in rel_dirs {
+        cmd.arg(d);
+    }
+    let out = cmd
+        .output()
+        .map_err(|e| AppError::Invalid(format!("backup failed to run tar: {e}")))?;
+    if !out.status.success() || !dest.is_file() {
+        return Err(AppError::Invalid(format!(
+            "backup failed: {}",
+            String::from_utf8_lossy(&out.stderr).trim()
+        )));
+    }
+    Ok(())
 }
 
 /// One-shot onboarding migration: bulk-import foreign skills into the store,
@@ -495,6 +522,27 @@ mod tests {
         reconcile_dir(&agent_dir, &targets, &mut summary).unwrap();
         assert_eq!((summary.added, summary.removed), (0, 0));
         assert_eq!(summary.unchanged, 1);
+    }
+
+    #[test]
+    fn backup_preserves_dirs_and_symlinks() {
+        let _ctx = setup();
+        let base = state::loadout_root().join("fake-home");
+        fs::create_dir_all(base.join(".claude/skills/my-skill")).unwrap();
+        fs::write(base.join(".claude/skills/my-skill/SKILL.md"), "content").unwrap();
+        std::os::unix::fs::symlink("my-skill", base.join(".claude/skills/alias")).unwrap();
+
+        let dest = state::loadout_root().join("backups/test.tar.gz");
+        backup_dirs(&base, &[".claude/skills".into()], &dest).unwrap();
+        assert!(dest.is_file());
+
+        let listing = std::process::Command::new("tar")
+            .args(["-tzf", &dest.to_string_lossy()])
+            .output()
+            .unwrap();
+        let listing = String::from_utf8_lossy(&listing.stdout);
+        assert!(listing.contains(".claude/skills/my-skill/SKILL.md"));
+        assert!(listing.contains(".claude/skills/alias"));
     }
 
     #[test]
