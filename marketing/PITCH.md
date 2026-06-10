@@ -78,6 +78,30 @@ with a `scripts` badge visible. Then Library → a pending update → click `dif
 > like you'd read a dependency. Updates are pinned by default: see the diff, apply in one click,
 > roll back in one click."
 
+### Beat 4b — update with diff, then rollback (optional ~35s insert, the trust money-shot)
+
+**Setup (already staged):** `agent-browser` is pinned at an older upstream commit, so a real
+update is waiting. The diff is dramatic: upstream rewrote the skill — 11 files, +29 −1758.
+
+**Screen:**
+1. Library — the orange badge on the tab and the `Updates (3)` filter. Click it.
+2. On `agent-browser`, click **diff** (don't click Update yet). Scroll the diff slowly for ~4
+   seconds — let the wall of red deletions land.
+3. Close, click **Update**. Toast fires; badge count drops.
+4. Open the skill in the inspector — point at the new rev and the **Roll back** button. Click it.
+   Rev flips back. (Click Update once more if you want to end on latest.)
+
+**Voice:**
+> "Loadout's telling me three skills have upstream changes. Before I take one — let's see what
+> actually changed. Eleven files. Seventeen hundred lines deleted. Upstream rewrote this skill
+> completely — and remember, this text gets injected straight into my agent. I want to SEE that
+> before it lands. Looks intentional — one click to update… and if I ever regret it, one click
+> to roll back. Pinned by default, diff on demand, rollback always. Skills are dependencies.
+> Treat them like it."
+
+*(The other two updates have no content diff — upstream moved but those skills didn't change.
+If you show one, say exactly that: "and these two? Repo moved, skill unchanged — safe.")*
+
 ### Beat 5 — share & team (1:50–2:15)
 
 **Screen:** loadout.gilla.fun → the share page from your real link (e.g. `/s/...`). Then flash
