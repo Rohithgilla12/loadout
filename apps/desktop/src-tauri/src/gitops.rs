@@ -44,6 +44,11 @@ pub fn parse_source(input: &str) -> Result<(String, String)> {
         let id = format!("github.com/{}/{}", parts[0], parts[1]);
         return Ok((id.clone(), format!("https://{id}.git")));
     }
+    // bare host/owner/repo (our own canonical source id, e.g. "github.com/o/r")
+    if parts.len() >= 3 && parts[0].contains('.') && parts.iter().all(|p| !p.is_empty()) {
+        let id = format!("{}/{}/{}", parts[0], parts[1], parts[2]);
+        return Ok((id.clone(), format!("https://{id}.git")));
+    }
     Err(AppError::Invalid(format!(
         "cannot parse '{input}': expected owner/repo, a git URL, or a local path"
     )))
@@ -187,6 +192,18 @@ mod tests {
         assert_eq!(
             parse_source("git@github.com:owner/repo.git").unwrap().0,
             "github.com/owner/repo"
+        );
+        // our own canonical id must round-trip (install passes source back in)
+        assert_eq!(
+            parse_source("github.com/vercel-labs/skills").unwrap(),
+            (
+                "github.com/vercel-labs/skills".to_string(),
+                "https://github.com/vercel-labs/skills.git".to_string()
+            )
+        );
+        assert_eq!(
+            parse_source("gitlab.com/group/project").unwrap().0,
+            "gitlab.com/group/project"
         );
         assert!(parse_source("not a source").is_err());
         assert!(parse_source("../../etc").is_err());
