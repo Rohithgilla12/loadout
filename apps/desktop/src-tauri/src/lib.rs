@@ -8,6 +8,11 @@ mod registry;
 mod state;
 mod store;
 
+/// Internal APIs re-exported for integration tests only.
+pub mod test_support {
+    pub use crate::gitops::{discover_skills, shallow_fetch};
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // crash recovery before the UI asks for anything
