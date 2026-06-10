@@ -8,6 +8,7 @@ mod registry;
 mod state;
 mod store;
 mod tray;
+mod usage;
 
 /// Internal APIs re-exported for integration tests only.
 pub mod test_support {
@@ -87,6 +88,7 @@ pub fn run() {
             commands::get_overview,
             commands::save_settings_cmd,
             commands::refresh_tray,
+            commands::scan_usage,
             commands::registry_leaderboard,
             commands::registry_search,
         ])

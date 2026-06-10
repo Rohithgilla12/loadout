@@ -7,15 +7,67 @@ import { SkillMarkdown } from "../components/SkillMarkdown";
 import { estimateSkillTokens, formatSize, formatTokens } from "../lib/format";
 import { useToast } from "../components/Toast";
 
+const USAGE_WINDOW_DAYS = 30;
+
 export function Library() {
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "updates" | "local">("all");
+  const [filter, setFilter] = useState<"all" | "updates" | "local" | "unused">("all");
   const [selectedName, setSelectedName] = useState<string | null>(null);
   const toast = useToast();
   const queryClient = useQueryClient();
 
   const library = useQuery({ queryKey: ["library"], queryFn: api.listLibrary });
   const updates = useQuery({ queryKey: ["updates"], queryFn: api.checkUpdates, staleTime: 1000 * 60 * 60, retry: false });
+  const usage = useQuery({ queryKey: ["usage"], queryFn: api.scanUsage, staleTime: 1000 * 60 * 10, retry: false });
+
+  // invocation names can be plugin-namespaced ("superpowers:brainstorming");
+  // match library names directly or by the part after the colon
+  const usageMap = useMemo(() => {
+    const map = new Map<string, { count: number; last_used?: string | null }>();
+    for (const u of usage.data?.skills ?? []) {
+      const existing = map.get(u.name);
+      map.set(u.name, existing ? { count: existing.count + u.count, last_used: maxIso(existing.last_used, u.last_used) } : u);
+      const short = u.name.includes(":") ? u.name.split(":").pop()! : null;
+      if (short) {
+        const e = map.get(short);
+        map.set(short, e ? { count: e.count + u.count, last_used: maxIso(e.last_used, u.last_used) } : { count: u.count, last_used: u.last_used });
+      }
+    }
+    return map;
+  }, [usage.data]);
+
+  const usedRecently = (name: string) => {
+    const last = usageMap.get(name)?.last_used;
+    if (!last) return false;
+    return Date.now() - new Date(last).getTime() < USAGE_WINDOW_DAYS * 24 * 3600 * 1000;
+  };
+
+  const recentCount = useMemo(
+    () => (library.data ?? []).filter((s) => usedRecently(s.name)).length,
+    [library.data, usageMap],
+  );
+
+  const buildFromUsage = useMutation({
+    mutationFn: async () => {
+      const used = (library.data ?? []).filter((s) => usedRecently(s.name)).map((s) => s.name);
+      if (!used.length) throw new Error("no recently-used skills to build from");
+      const name = `active-${USAGE_WINDOW_DAYS}d`;
+      const profile = await api.createProfile(name).catch(async () => {
+        // exists — overwrite its contents
+        const all = await api.listProfiles();
+        const existing = all.find((p) => p.name === name);
+        if (!existing) throw new Error("could not create profile");
+        return existing;
+      });
+      await api.saveProfile({ ...profile, skills: used });
+      return { name, count: used.length };
+    },
+    onSuccess: ({ name, count }) => {
+      toast(`Profile “${name}” built from your last ${USAGE_WINDOW_DAYS} days — ${count} skills`, "ok");
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+    onError: (e) => toast(String(e), "error"),
+  });
   const detail = useQuery({
     queryKey: ["skill", selectedName],
     queryFn: () => api.getSkillDetail(selectedName!),
@@ -40,8 +92,9 @@ export function Library() {
     }
     if (filter === "updates") list = list.filter((s) => updateMap.has(s.name));
     if (filter === "local") list = list.filter((s) => s.source === "local");
+    if (filter === "unused") list = list.filter((s) => !usedRecently(s.name));
     return list;
-  }, [library.data, search, filter, updateMap]);
+  }, [library.data, search, filter, updateMap, usageMap]);
 
   const remove = useMutation({
     mutationFn: api.removeSkill,
@@ -128,7 +181,7 @@ export function Library() {
             className="max-w-xs"
           />
           <div className="flex rounded border border-line overflow-hidden text-[12px]">
-            {(["all", "updates", "local"] as const).map((f) => (
+            {(["all", "updates", "local", "unused"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
@@ -149,6 +202,27 @@ export function Library() {
           )}
         </div>
 
+        {usage.data && library.data && library.data.length > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2 border-b border-line bg-paper-sunken/50 text-[12.5px]">
+            <span>
+              <b>{recentCount}</b> of <b>{library.data.length}</b> skills used in the last{" "}
+              {USAGE_WINDOW_DAYS} days
+              <span className="text-ink-faint">
+                {" "}
+                · from your Claude Code sessions, locally
+              </span>
+            </span>
+            <Button
+              className="ml-auto"
+              onClick={() => buildFromUsage.mutate()}
+              disabled={buildFromUsage.isPending || !recentCount}
+              title="Create (or refresh) a profile containing only the skills you actually used"
+            >
+              {buildFromUsage.isPending ? <Spinner /> : "Build profile from usage"}
+            </Button>
+          </div>
+        )}
+
         <div className="overflow-y-auto flex-1">
           <table className="w-full text-[12.5px]">
             <thead className="sticky top-0 bg-paper z-10">
@@ -157,6 +231,7 @@ export function Library() {
                 <th className="px-2 py-2 font-semibold">Source</th>
                 <th className="px-2 py-2 font-semibold">Rev</th>
                 <th className="px-2 py-2 font-semibold text-right" title="Estimated tokens this skill adds to every agent session (name + description injection)">Tok</th>
+                <th className="px-2 py-2 font-semibold text-right" title="Times this skill fired in your Claude Code sessions (all time, scanned locally)">Used</th>
                 <th className="px-2 py-2 font-semibold">Profiles</th>
                 <th className="px-2 py-2 font-semibold w-20"></th>
               </tr>
@@ -166,6 +241,7 @@ export function Library() {
                 <LibraryRow
                   key={s.name}
                   skill={s}
+                  usage={usageMap.get(s.name)}
                   latest={updateMap.get(s.name)}
                   selected={selectedName === s.name}
                   onSelect={() => setSelectedName(s.name)}
@@ -281,8 +357,23 @@ export function Library() {
   );
 }
 
+function maxIso(a?: string | null, b?: string | null): string | null {
+  if (!a) return b ?? null;
+  if (!b) return a;
+  return a > b ? a : b;
+}
+
+function relativeDays(iso?: string | null): string {
+  if (!iso) return "never";
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  return `${days}d ago`;
+}
+
 function LibraryRow({
   skill,
+  usage,
   latest,
   selected,
   onSelect,
@@ -290,6 +381,7 @@ function LibraryRow({
   onDiff,
 }: {
   skill: LibrarySkill;
+  usage?: { count: number; last_used?: string | null };
   latest?: string;
   selected: boolean;
   onSelect: () => void;
@@ -316,6 +408,14 @@ function LibraryRow({
       </td>
       <td className="px-2 py-2 text-right">
         <Mono>{formatTokens(estimateSkillTokens(skill.name, skill.description))}</Mono>
+      </td>
+      <td className="px-2 py-2 text-right">
+        <Mono
+          className={usage ? undefined : "opacity-40"}
+          title={usage ? `last used ${relativeDays(usage.last_used)}` : "never seen in your sessions"}
+        >
+          {usage ? `${usage.count}×` : "—"}
+        </Mono>
       </td>
       <td className="px-2 py-2">
         <div className="flex flex-wrap gap-1">

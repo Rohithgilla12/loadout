@@ -147,6 +147,19 @@ export interface ProfileShare {
   skipped_local: string[];
 }
 
+export interface SkillUsage {
+  name: string;
+  count: number;
+  last_used?: string | null;
+}
+
+export interface UsageReport {
+  skills: SkillUsage[];
+  files_total: number;
+  files_rescanned: number;
+  total_invocations: number;
+}
+
 export interface RegistrySkill {
   source: string;
   skillId: string;

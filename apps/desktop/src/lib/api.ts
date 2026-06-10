@@ -16,6 +16,7 @@ import type {
   SkillDetail,
   SlugCheck,
   UpdateInfo,
+  UsageReport,
 } from "./types";
 
 export const api = {
@@ -83,6 +84,9 @@ export const api = {
   migrateAll: (replace: boolean, profileName: string, backup: boolean) =>
     invoke<MigrateSummary>("migrate_all", { replace, profileName, backup }),
   reapplyAll: () => invoke<ApplySummary[]>("reapply_all_cmd"),
+
+  // usage analytics (local-only)
+  scanUsage: () => invoke<UsageReport>("scan_usage"),
 
   // registry
   registryLeaderboard: (view: string) => invoke<RegistrySkill[]>("registry_leaderboard", { view }),

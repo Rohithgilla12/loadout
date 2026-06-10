@@ -956,6 +956,15 @@ pub fn save_settings_cmd(settings: Settings) -> Result<()> {
     state::save_settings(&settings)
 }
 
+/// Scan Claude Code transcripts for actual skill invocations (local-only,
+/// incremental — only changed files are re-read).
+#[tauri::command]
+pub async fn scan_usage() -> Result<crate::usage::UsageReport> {
+    tokio::task::spawn_blocking(crate::usage::scan)
+        .await
+        .map_err(|e| AppError::App(e.to_string()))?
+}
+
 /// Called by the frontend after every successful mutation so the tray menu
 /// (profiles, projects, checkmarks) never goes stale.
 #[tauri::command]
