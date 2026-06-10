@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { readShareFromHash, type SharedLoadout } from "./lib/share";
 import { Landing } from "./views/Landing";
 import { SharePage } from "./views/SharePage";
@@ -17,7 +18,12 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
-  if (shared) return <SharePage loadout={shared} />;
-  if (building) return <Builder />;
-  return <Landing />;
+  return (
+    <>
+      {shared && <SharePage loadout={shared} />}
+      {!shared && building && <Builder />}
+      {!shared && !building && <Landing />}
+      <Analytics />
+    </>
+  );
 }
