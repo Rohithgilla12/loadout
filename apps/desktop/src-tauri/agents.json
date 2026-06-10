@@ -1,0 +1,23 @@
+[
+  {
+    "id": "claude-code",
+    "display_name": "Claude Code",
+    "global_skills_dir": ".claude/skills",
+    "project_skills_dir": ".claude/skills",
+    "detect_dir": ".claude"
+  },
+  {
+    "id": "cursor",
+    "display_name": "Cursor",
+    "global_skills_dir": ".cursor/skills",
+    "project_skills_dir": ".cursor/skills",
+    "detect_dir": ".cursor"
+  },
+  {
+    "id": "agents-standard",
+    "display_name": "Codex / Copilot / OpenCode (.agents)",
+    "global_skills_dir": ".agents/skills",
+    "project_skills_dir": ".agents/skills",
+    "detect_dir": ".agents"
+  }
+]
