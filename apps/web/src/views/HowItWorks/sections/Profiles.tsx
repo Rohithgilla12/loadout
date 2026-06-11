@@ -32,7 +32,7 @@ export function Profiles() {
         </p>
       </Prose>
 
-      <div className="flex gap-1.5 mb-4 flex-wrap items-center" role="tablist" aria-label="Profile">
+      <div className="flex gap-1.5 mb-4 flex-wrap items-center" role="tablist" aria-label="Profile to switch to">
         {Object.keys(PROFILES).map((p) => (
           <button
             key={p}
