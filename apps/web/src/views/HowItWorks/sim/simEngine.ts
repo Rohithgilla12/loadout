@@ -46,5 +46,7 @@ export function isLoadoutOwned(fs: SimFS, entryPath: string): boolean {
   const absolute = entry.target.startsWith("/")
     ? entry.target
     : parentOf(entryPath) + "/" + entry.target;
-  return normalize(absolute).startsWith(normalize(STORE_ROOT) + "/");
+  const root = normalize(STORE_ROOT);
+  const abs = normalize(absolute);
+  return abs === root || abs.startsWith(root + "/");
 }

@@ -44,6 +44,14 @@ describe("isLoadoutOwned", () => {
     expect(isLoadoutOwned(fs, `${DIR}/rel`)).toBe(true);
   });
 
+  test("matches rust Path::starts_with at the boundary", () => {
+    const fs = baseFs();
+    fs.set(`${DIR}/root-link`, { kind: "symlink", target: STORE_ROOT });
+    fs.set(`${DIR}/sibling`, { kind: "symlink", target: `${STORE_ROOT}-extra/x` });
+    expect(isLoadoutOwned(fs, `${DIR}/root-link`)).toBe(true);
+    expect(isLoadoutOwned(fs, `${DIR}/sibling`)).toBe(false);
+  });
+
   test("foreign entries are never owned", () => {
     const fs = baseFs();
     fs.set(`${DIR}/elsewhere`, { kind: "symlink", target: "/home/you/dotfiles/skill" });
