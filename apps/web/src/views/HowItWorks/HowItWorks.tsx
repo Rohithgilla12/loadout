@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Problem } from "./sections/Problem";
 import { StoreInstall } from "./sections/StoreInstall";
 import { Lockfile } from "./sections/Lockfile";
+import { Reconcile } from "./sections/Reconcile";
 
 export interface SectionDef {
   n: string;
@@ -14,6 +15,7 @@ const SECTIONS: SectionDef[] = [
   { n: "1", title: "Thirty skills. All of them. All the time.", body: <Problem /> },
   { n: "2", title: "Install puts content in one place: the store", body: <StoreInstall /> },
   { n: "3", title: "The lockfile: pinned by default, rollback for free", body: <Lockfile /> },
+  { n: "4", title: "Reconcile: two passes, one ownership rule", body: <Reconcile /> },
 ];
 
 export function HowItWorks() {
