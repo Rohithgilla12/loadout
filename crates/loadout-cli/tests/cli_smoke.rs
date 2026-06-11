@@ -9,10 +9,14 @@ fn bin() -> &'static str {
     env!("CARGO_BIN_EXE_loadout")
 }
 
-fn run(home: &Path, args: &[&str]) -> (String, i32) {
+/// `root` becomes both $HOME and the parent of LOADOUT_HOME, so global agent
+/// detection sees an empty machine on any host — CI and dev boxes behave the
+/// same. Agents are detected via the project dirs created in the seed.
+fn run(root: &Path, args: &[&str]) -> (String, i32) {
     let out = Command::new(bin())
         .args(args)
-        .env("LOADOUT_HOME", home)
+        .env("HOME", root)
+        .env("LOADOUT_HOME", root.join(".loadout"))
         .output()
         .expect("binary runs");
     let text = format!(
@@ -26,13 +30,17 @@ fn run(home: &Path, args: &[&str]) -> (String, i32) {
 #[test]
 fn switch_check_doctor_roundtrip() {
     let tmp = tempfile::tempdir().unwrap();
-    let home = tmp.path().join(".loadout");
-    let proj = tmp.path().join("proj");
+    let root = tmp.path();
+    let home = root.join(".loadout");
+    let proj = root.join("proj");
 
-    // seed: one local skill in the store + lock, one profile, one project
+    // seed: one local skill in the store + lock, one profile, one project.
+    // The project ships a .claude/skills dir so the Claude Code agent is
+    // project-detected even on machines with no agents installed (CI).
     fs::create_dir_all(home.join("store/local/alpha")).unwrap();
     fs::create_dir_all(home.join("profiles")).unwrap();
     fs::create_dir_all(proj.join(".loadout/skills/alpha")).unwrap();
+    fs::create_dir_all(proj.join(".claude/skills")).unwrap();
     let skill_md = "---\nname: alpha\ndescription: test skill\n---\nbody";
     fs::write(home.join("store/local/alpha/SKILL.md"), skill_md).unwrap();
     fs::write(proj.join(".loadout/skills/alpha/SKILL.md"), skill_md).unwrap();
@@ -61,34 +69,34 @@ fn switch_check_doctor_roundtrip() {
     )
     .unwrap();
 
-    let (out, code) = run(&home, &["list"]);
+    let (out, code) = run(root, &["list"]);
     assert_eq!(code, 0, "{out}");
     assert!(out.contains("web"), "{out}");
 
     // before assignment: declared profile not assigned → drift
     let proj_str = proj.to_str().unwrap();
-    let (out, code) = run(&home, &["check", proj_str]);
+    let (out, code) = run(root, &["check", proj_str]);
     assert_eq!(code, 1, "{out}");
     assert!(out.contains("DRIFT"), "{out}");
 
     // project-scoped switch materializes symlinks inside the temp project only
-    let (out, code) = run(&home, &["switch", "web", "--project", proj_str]);
+    let (out, code) = run(root, &["switch", "web", "--project", proj_str]);
     assert_eq!(code, 0, "{out}");
     let link = proj.join(".claude/skills/alpha");
     assert!(link.symlink_metadata().unwrap().file_type().is_symlink());
 
     // now in sync
-    let (out, code) = run(&home, &["check", proj_str]);
+    let (out, code) = run(root, &["check", proj_str]);
     assert_eq!(code, 0, "{out}");
     assert!(out.contains("in sync"), "{out}");
 
     // unknown profile errors with exit 2
-    let (out, code) = run(&home, &["switch", "nope", "--project", proj_str]);
+    let (out, code) = run(root, &["switch", "nope", "--project", proj_str]);
     assert_eq!(code, 2, "{out}");
     assert!(out.contains("not found"), "{out}");
 
     // doctor: healthy (json shape sanity too)
-    let (out, code) = run(&home, &["doctor", "--json"]);
+    let (out, code) = run(root, &["doctor", "--json"]);
     assert_eq!(code, 0, "{out}");
     assert!(out.contains("\"broken_store\": []"), "{out}");
 }
