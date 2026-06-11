@@ -9,6 +9,7 @@ import {
   reconcileDir,
   applySteps,
 } from "./simEngine";
+import { CLAUDE_DIR, initialAgentFs, targetsFor } from "./fixtures";
 
 export const DIR = "/home/you/.claude/skills";
 export const ALPHA = `${STORE_ROOT}/local/alpha`;
@@ -139,5 +140,15 @@ describe("reconcileDir", () => {
     const r = reconcileDir(fs, DIR, [["alpha", ALPHA]]);
     expect(applySteps(fs, r.steps, r.steps.length)).toEqual(r.fs);
     expect(r.fs.get(DIR)).toEqual({ kind: "dir" });
+  });
+});
+
+describe("fixtures", () => {
+  test("starting state is the writing profile, already in sync", () => {
+    const r = reconcileDir(initialAgentFs(), CLAUDE_DIR, targetsFor("writing"));
+    expect(r.summary.added).toBe(0);
+    expect(r.summary.removed).toBe(0);
+    expect(r.summary.unchanged).toBe(2);
+    expect(r.summary.skippedConflicts).toEqual([]);
   });
 });
