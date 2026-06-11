@@ -23,6 +23,7 @@ export function Reconcile() {
   const done = result !== null && index >= result.steps.length;
 
   function pick(p: string) {
+    if (p === profile) return;
     setFsBase(result ? result.fs : fsBase);
     setProfile(p);
     setIndex(0);
@@ -69,7 +70,11 @@ export function Reconcile() {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-[1fr_minmax(220px,260px)] gap-4 items-start">
+      <div
+        role="tabpanel"
+        aria-label={profile ? `reconcile run: ${profile}` : "no profile selected"}
+        className="grid md:grid-cols-[1fr_minmax(220px,260px)] gap-4 items-start"
+      >
         <FileTree fs={visible} dir={CLAUDE_DIR} highlight={highlight} />
         <div>
           {result ? (

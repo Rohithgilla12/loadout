@@ -21,6 +21,11 @@ export function StepPlayer({
     return () => clearTimeout(t);
   }, [playing, index, steps.length, onIndexChange]);
 
+  // a new run's steps mean any in-flight autoplay belongs to the old run
+  useEffect(() => {
+    setPlaying(false);
+  }, [steps]);
+
   const current = index > 0 ? steps[index - 1] : null;
   const btn =
     "border border-line-strong rounded px-2.5 py-1 text-[12px] font-medium hover:border-ink-faint disabled:opacity-40 disabled:cursor-default";
