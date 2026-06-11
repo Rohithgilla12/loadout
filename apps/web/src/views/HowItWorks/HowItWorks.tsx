@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
+import { Problem } from "./sections/Problem";
 
 export interface SectionDef {
   n: string;
@@ -7,7 +8,9 @@ export interface SectionDef {
   body: ReactNode;
 }
 
-const SECTIONS: SectionDef[] = [];
+const SECTIONS: SectionDef[] = [
+  { n: "1", title: "Thirty skills. All of them. All the time.", body: <Problem /> },
+];
 
 export function HowItWorks() {
   useEffect(() => {
