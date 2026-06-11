@@ -1,6 +1,6 @@
 [package]
 name = "loadout-core"
-version = "0.2.0"
+version = "0.3.0"
 description = "Loadout engine — profiles, content-addressed skill store, symlink reconciliation"
 authors = ["Rohith Gilla"]
 license = "MIT"

@@ -1,8 +1,5 @@
-# Loadout v0.3.0 — draft release notes (built overnight 2026-06-11)
+# Loadout v0.3.0 — the CLI release
 
-> Draft — review before tagging. Everything below is committed on main and
-> tested; version numbers in Cargo.toml/tauri.conf are still 0.2.0 and need
-> bumping when you cut the release.
 
 ## The `loadout` CLI
 
