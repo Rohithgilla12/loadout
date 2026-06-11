@@ -33,6 +33,7 @@ export function Sharing() {
 
   const tabBtn = (t: typeof tab, label: string) => (
     <button
+      id={`share-tab-${t}`}
       onClick={() => setTab(t)}
       role="tab"
       aria-selected={tab === t}
@@ -85,7 +86,7 @@ export function Sharing() {
           {tabBtn("decoded", "decoded")}
           {tabBtn("json", "loadout.json")}
         </div>
-        <div className="border border-t-0 border-line rounded-b-lg bg-paper-raised" role="tabpanel" aria-label={tab}>
+        <div className="border border-t-0 border-line rounded-b-lg bg-paper-raised" role="tabpanel" aria-labelledby={`share-tab-${tab}`}>
           {tab === "url" && (
             <div className="p-4">
               <div className="font-mono text-[11.5px] leading-relaxed break-all text-ink-soft">
