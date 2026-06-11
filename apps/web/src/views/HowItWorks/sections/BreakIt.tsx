@@ -15,6 +15,8 @@ import {
 import { CLAUDE_DIR, initialAgentFs, storePathFor, targetsFor, SKILLS } from "../sim/fixtures";
 import { SNIPPET_JOURNAL, SNIPPET_CLOBBER_TEST } from "./snippets";
 
+const FRONTEND_TARGETS = targetsFor("frontend");
+
 /** Names of entries in the agent dir that Loadout does NOT own. */
 function foreignNames(fs: SimFS): Set<string> {
   return new Set(
@@ -52,9 +54,9 @@ export function BreakIt() {
     setFs(next);
   }
 
-  function run(from: SimFS) {
-    const before = foreignNames(from);
-    const r = reconcileDir(from, CLAUDE_DIR, targetsFor("frontend"));
+  function run() {
+    const before = foreignNames(fs);
+    const r = reconcileDir(fs, CLAUDE_DIR, FRONTEND_TARGETS);
     const after = foreignNames(r.fs);
     let lost = 0;
     for (const n of before) if (!after.has(n)) lost += 1;
@@ -65,7 +67,7 @@ export function BreakIt() {
   }
 
   function killMidApply() {
-    const r = reconcileDir(fs, CLAUDE_DIR, targetsFor("frontend"));
+    const r = reconcileDir(fs, CLAUDE_DIR, FRONTEND_TARGETS);
     setFs(applySteps(fs, r.steps, Math.ceil(r.steps.length / 2)));
     setSummary(null);
     setJournal(true);
@@ -99,7 +101,7 @@ export function BreakIt() {
           <button className={btn} onClick={() => plant("symlink")}>plant symlink → ~/elsewhere</button>
         </div>
         <div className="flex gap-2 flex-wrap items-center">
-          {targetsFor("frontend").map(([n]) => (
+          {FRONTEND_TARGETS.map(([n]) => (
             <button key={n} className={btn} onClick={() => deleteFromStore(n)}>
               rm store copy of {n}
             </button>
@@ -108,17 +110,17 @@ export function BreakIt() {
         <div className="flex gap-2 flex-wrap items-center">
           <button
             className="bg-accent hover:bg-accent-deep text-paper-raised font-semibold px-4 py-1.5 rounded text-[12.5px]"
-            onClick={() => { setJournal(false); run(fs); }}
+            onClick={() => { setJournal(false); run(); }}
           >
             run apply (frontend)
           </button>
-          <button className={btn} onClick={killMidApply} disabled={journal}>
+          <button className={btn} onClick={killMidApply} disabled={journal} title={journal ? "journal already on disk — relaunch first" : undefined}>
             ⚡ kill it mid-apply
           </button>
           {journal && (
             <button
               className="rise-in border border-warn rounded px-3 py-1.5 text-[12.5px] font-medium text-warn"
-              onClick={() => { setJournal(false); run(fs); }}
+              onClick={() => { setJournal(false); run(); }}
             >
               ↻ relaunch app (journal found → re-apply)
             </button>
@@ -130,7 +132,7 @@ export function BreakIt() {
 
       <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 font-mono text-[12px] text-ink-soft" role="status" aria-live="polite">
         <span>applies run: {runs}</span>
-        <span className="text-ok font-semibold">your files eaten: {eaten}</span>
+        <span className={eaten === 0 ? "text-ok font-semibold" : "text-warn font-semibold"}>your files eaten: {eaten}</span>
         {journal && <span className="text-warn">journal on disk — apply incomplete</span>}
         {summary && summary.skippedConflicts.length > 0 && (
           <span className="basis-full text-warn">
