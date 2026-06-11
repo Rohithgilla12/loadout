@@ -27,10 +27,11 @@ export function StepPlayer({
   return (
     <div>
       <div className="flex items-center gap-2 flex-wrap">
-        <button className={btn} onClick={() => { setPlaying(false); onIndexChange(0); }} disabled={index === 0}>
+        <button aria-label="Reset" className={btn} onClick={() => { setPlaying(false); onIndexChange(0); }} disabled={index === 0}>
           ⏮ reset
         </button>
         <button
+          aria-label="Step back"
           className={btn}
           onClick={() => { setPlaying(false); onIndexChange(Math.max(0, index - 1)); }}
           disabled={index === 0}
@@ -38,6 +39,7 @@ export function StepPlayer({
           ◀
         </button>
         <button
+          aria-label="Step forward"
           className={btn}
           onClick={() => { setPlaying(false); onIndexChange(Math.min(steps.length, index + 1)); }}
           disabled={index >= steps.length}
@@ -51,7 +53,7 @@ export function StepPlayer({
           {index} / {steps.length}
         </span>
       </div>
-      <div className="mt-2 min-h-[20px] text-[12.5px] text-ink-soft font-mono">
+      <div role="status" aria-live="polite" className="mt-2 min-h-[20px] text-[12.5px] text-ink-soft font-mono">
         {current ? current.caption : steps.length ? "press play to run both passes" : ""}
       </div>
     </div>

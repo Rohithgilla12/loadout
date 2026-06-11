@@ -3,7 +3,7 @@ export interface TermLine {
   tone?: "ok" | "drift" | "dim" | "cmd";
 }
 
-const TONE: Record<string, string> = {
+const TONE: Record<NonNullable<TermLine["tone"]>, string> = {
   ok: "text-[oklch(0.75_0.12_150)]",
   drift: "text-[oklch(0.72_0.17_30)]",
   dim: "text-[oklch(0.55_0.01_70)]",

@@ -5,7 +5,7 @@ export function CodeFold({ title, code, lang = "rust" }: { title: string; code: 
         <span className="text-accent-deep">{"</>"}</span> {title}{" "}
         <span className="text-ink-faint">· {lang} · verbatim from the repo</span>
       </summary>
-      <pre className="px-4 py-3 border-t border-line overflow-x-auto text-[12px] leading-relaxed font-mono text-ink-soft">
+      <pre className={`px-4 py-3 border-t border-line overflow-x-auto text-[12px] leading-relaxed font-mono text-ink-soft language-${lang}`}>
         {code}
       </pre>
     </details>

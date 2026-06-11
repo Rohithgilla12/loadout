@@ -28,7 +28,8 @@ export function FileTree({
 }
 
 function Row({ fs, path, highlighted }: { fs: SimFS; path: string; highlighted: boolean }) {
-  const entry = fs.get(path)!;
+  const entry = fs.get(path);
+  if (!entry) return null;
   const name = path.slice(path.lastIndexOf("/") + 1);
   const owned = isLoadoutOwned(fs, path);
   const broken = entry.kind === "symlink" && !fs.has(normalize(entry.target));
