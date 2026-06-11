@@ -27,6 +27,7 @@ export function Landing() {
           <span className="font-bold tracking-tight text-[17px]">Loadout</span>
         </div>
         <nav className="flex items-center gap-5 text-[13.5px]">
+          <a href="/how-it-works" className="text-ink-soft hover:text-ink">How it works</a>
           <a href="#share" className="text-ink-soft hover:text-ink">Share a loadout</a>
           <a
             href="https://github.com/Rohithgilla12/loadout"
