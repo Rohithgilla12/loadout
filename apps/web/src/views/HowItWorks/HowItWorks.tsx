@@ -7,6 +7,7 @@ import { Reconcile } from "./sections/Reconcile";
 import { BreakIt } from "./sections/BreakIt";
 import { Profiles } from "./sections/Profiles";
 import { Sharing } from "./sections/Sharing";
+import { Ci } from "./sections/Ci";
 
 export interface SectionDef {
   n: string;
@@ -22,6 +23,7 @@ const SECTIONS: SectionDef[] = [
   { n: "5", title: "Try to break it", body: <BreakIt /> },
   { n: "6", title: "Profiles: one switch, every agent", body: <Profiles /> },
   { n: "7", title: "Sharing: the loadout travels in the URL", body: <Sharing /> },
+  { n: "8", title: "loadout check: drift fails the build", body: <Ci /> },
 ];
 
 export function HowItWorks() {
