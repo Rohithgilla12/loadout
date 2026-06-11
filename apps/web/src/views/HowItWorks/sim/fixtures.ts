@@ -3,12 +3,9 @@ import { type Entry, type SimFS, HOME, STORE_ROOT } from "./simEngine";
 export const CLAUDE_DIR = `${HOME}/.claude/skills`;
 export const AGENTS_DIR = `${HOME}/.agents/skills`;
 
-export interface SimSkill {
-  name: string;
-  source: string; // "local" or e.g. "github.com/anthropics/skills"
-  rev?: string;
-  description: string;
-}
+export type SimSkill =
+  | { name: string; source: "local"; rev?: never; description: string }
+  | { name: string; source: string; rev: string; description: string };
 
 // The journey skill is frontend-design; revs are short fake SHAs.
 export const SKILLS: SimSkill[] = [
@@ -37,14 +34,15 @@ export const PROFILES: Record<string, string[]> = {
 };
 
 export function storePathFor(skill: SimSkill): string {
-  return skill.source === "local"
-    ? `${STORE_ROOT}/local/${skill.name}`
-    : `${STORE_ROOT}/${skill.source}/${skill.rev}/${skill.name}`;
+  return skill.rev
+    ? `${STORE_ROOT}/${skill.source}/${skill.rev}/${skill.name}`
+    : `${STORE_ROOT}/local/${skill.name}`;
 }
 
 export function targetsFor(profile: string): Array<[string, string]> {
   return (PROFILES[profile] ?? []).map((name) => {
-    const skill = SKILLS.find((s) => s.name === name)!;
+    const skill = SKILLS.find((s) => s.name === name);
+    if (!skill) throw new Error(`fixture data error: "${name}" in PROFILES but not in SKILLS`);
     return [name, storePathFor(skill)];
   });
 }
