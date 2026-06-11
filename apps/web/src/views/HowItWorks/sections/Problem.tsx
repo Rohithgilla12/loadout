@@ -28,10 +28,12 @@ export function Problem() {
         <p>Click through the agent directories. Notice anything?</p>
       </Prose>
 
-      <div className="flex gap-1.5 mb-3 flex-wrap">
+      <div className="flex gap-1.5 mb-3 flex-wrap" role="tablist" aria-label="Agent directory">
         {AGENT_DIRS.map((d, i) => (
           <button
             key={d}
+            role="tab"
+            aria-selected={dir === i}
             onClick={() => setDir(i)}
             className={
               dir === i
@@ -44,11 +46,12 @@ export function Problem() {
         ))}
       </div>
 
-      <div key={dir} className="border border-line rounded-lg bg-paper-raised p-3">
+      <div key={dir} role="tabpanel" aria-label={AGENT_DIRS[dir]} className="border border-line rounded-lg bg-paper-raised p-3">
         <div className="flex flex-wrap gap-1.5">
           {PILE.map((s, i) => (
             <span
               key={s}
+              aria-label={s}
               className="rise-in font-mono text-[11px] px-2 py-0.5 rounded border border-accent/40 bg-accent-wash text-accent-deep"
               style={{ animationDelay: `${i * 0.012}s` }}
             >

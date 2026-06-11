@@ -84,3 +84,9 @@ body {
   background-size: 32px 32px;
   mask-image: linear-gradient(to bottom, black 0%, transparent 92%);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
