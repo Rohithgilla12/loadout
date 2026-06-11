@@ -8,7 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "check:worker": "wrangler types && tsc -p tsconfig.worker.json",
-    "deploy": "pnpm build && pnpm check:worker && wrangler deploy"
+    "deploy": "pnpm build && pnpm check:worker && wrangler deploy",
+    "test": "vitest run"
   },
   "dependencies": {
     "react": "^19.1.0",
@@ -24,6 +25,7 @@
     "tailwindcss": "^4",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
+    "vitest": "^4.1.8",
     "wrangler": "^4.99.0"
   }
 }
