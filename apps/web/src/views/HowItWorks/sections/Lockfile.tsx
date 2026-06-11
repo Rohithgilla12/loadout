@@ -36,6 +36,7 @@ export function Lockfile() {
         <button
           className={btn}
           disabled={rev === NEW_REV}
+          title="Already at the latest revision"
           onClick={() => {
             setPrevRev(rev);
             setRev(NEW_REV);
@@ -46,6 +47,7 @@ export function Lockfile() {
         <button
           className={btn}
           disabled={!prevRev}
+          title="No previous revision recorded yet"
           onClick={() => {
             const back = prevRev!;
             setPrevRev(rev);
@@ -54,16 +56,21 @@ export function Lockfile() {
         >
           ↩ Roll back
         </button>
-        <button className={btn} onClick={() => setTrack(track === "pinned" ? "latest" : "pinned")}>
+        <button
+          className={btn}
+          aria-pressed={track === "latest"}
+          aria-label="Track latest instead of pinned"
+          onClick={() => setTrack(track === "pinned" ? "latest" : "pinned")}
+        >
           track: {track} — toggle
         </button>
       </div>
 
-      <div className="border border-line rounded-lg bg-paper-raised overflow-hidden" role="region" aria-label="Lockfile contents">
+      <div className="border border-line rounded-lg bg-paper-raised overflow-hidden" role="region" aria-label="Lockfile contents" aria-live="polite">
         <div className="px-3 py-1.5 border-b border-line font-mono text-[11.5px] text-ink-faint">
           ~/.loadout/lock.json
         </div>
-        <pre className="px-4 py-3 overflow-x-auto text-[12px] leading-relaxed font-mono text-ink-soft" aria-live="polite">
+        <pre className="px-4 py-3 overflow-x-auto text-[12px] leading-relaxed font-mono text-ink-soft">
           {JSON.stringify({ skills: { "frontend-design": entry } }, null, 2)}
         </pre>
       </div>
