@@ -30,7 +30,7 @@ export function HowItWorks() {
   useEffect(() => {
     document.title = "Loadout — How it works";
     return () => {
-      document.title = "Loadout";
+      document.title = "Loadout — switchable skill sets for AI coding agents";
     };
   }, []);
 
@@ -65,8 +65,7 @@ export function HowItWorks() {
           <p className="rise-in rise-in-2 text-[16px] text-ink-soft mt-5 max-w-xl leading-relaxed">
             Loadout turns your pile of agent skills into switchable profiles. This post follows one
             skill through the whole machine — the store, the lockfile, the symlink reconciler, and
-            the sharing format. Every diagram below is <strong className="text-ink font-semibold">live</strong>:
-            the simulations run the same algorithm as the app, ported line-for-line from the Rust.
+            the sharing format. The simulations below are <strong className="text-ink font-semibold">live</strong> — they run the same algorithm as the app, ported from the Rust you can expand under each one.
           </p>
         </div>
       </section>
