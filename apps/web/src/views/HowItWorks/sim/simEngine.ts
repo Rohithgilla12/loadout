@@ -52,6 +52,7 @@ export function isLoadoutOwned(fs: SimFS, entryPath: string): boolean {
 }
 
 export type StepAction =
+  | "ensure-dir"
   | "skip-foreign"
   | "remove-stale"
   | "remove-unwanted"
@@ -96,7 +97,10 @@ export function reconcileDir(
   const steps: Step[] = [];
   const summary: Summary = { added: 0, removed: 0, unchanged: 0, skippedConflicts: [] };
   const dirN = normalize(dir);
-  if (!fs.has(dirN)) fs.set(dirN, { kind: "dir" });
+  if (!fs.has(dirN)) {
+    fs.set(dirN, { kind: "dir" });
+    steps.push({ action: "ensure-dir", path: dirN, caption: `create ${dirN}/` });
+  }
 
   // pass 1: remove loadout-owned links that shouldn't be there (or are stale)
   for (const path of childrenOf(fs, dirN)) {
@@ -112,6 +116,7 @@ export function reconcileDir(
     const wanted = targets.find(([n]) => n === name);
     const current = (fs.get(path) as Extract<Entry, { kind: "symlink" }>).target;
     if (wanted && current === wanted[1]) {
+      // pass 2 re-confirms this link with a second keep step — intentional for the step trail
       steps.push({ action: "keep", path, caption: `${name}: already points at the right store path` });
     } else {
       fs.delete(path);
@@ -158,8 +163,25 @@ export function reconcileDir(
 export function applySteps(input: SimFS, steps: Step[], count: number): SimFS {
   const fs = new Map(input);
   for (const step of steps.slice(0, count)) {
-    if (step.action === "remove-stale" || step.action === "remove-unwanted") fs.delete(step.path);
-    if (step.action === "create" && step.target) fs.set(step.path, { kind: "symlink", target: step.target });
+    switch (step.action) {
+      case "ensure-dir":
+        fs.set(step.path, { kind: "dir" });
+        break;
+      case "remove-stale":
+      case "remove-unwanted":
+        fs.delete(step.path);
+        break;
+      case "create":
+        if (step.target) fs.set(step.path, { kind: "symlink", target: step.target });
+        break;
+      case "skip-foreign":
+      case "keep":
+      case "conflict":
+      case "missing-store":
+        break; // decisions, not mutations
+      default:
+        step.action satisfies never;
+    }
   }
   return fs;
 }

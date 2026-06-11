@@ -132,4 +132,12 @@ describe("reconcileDir", () => {
     const partial = applySteps(baseFs(), r.steps, 0);
     expect(partial.has(`${DIR}/alpha`)).toBe(false);
   });
+
+  test("replay matches even when the agent dir must be created", () => {
+    const fs = baseFs();
+    fs.delete(DIR); // dir does not exist yet — reconcile creates it
+    const r = reconcileDir(fs, DIR, [["alpha", ALPHA]]);
+    expect(applySteps(fs, r.steps, r.steps.length)).toEqual(r.fs);
+    expect(r.fs.get(DIR)).toEqual({ kind: "dir" });
+  });
 });
