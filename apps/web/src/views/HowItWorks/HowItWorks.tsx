@@ -4,6 +4,7 @@ import { Problem } from "./sections/Problem";
 import { StoreInstall } from "./sections/StoreInstall";
 import { Lockfile } from "./sections/Lockfile";
 import { Reconcile } from "./sections/Reconcile";
+import { BreakIt } from "./sections/BreakIt";
 
 export interface SectionDef {
   n: string;
@@ -16,6 +17,7 @@ const SECTIONS: SectionDef[] = [
   { n: "2", title: "Install puts content in one place: the store", body: <StoreInstall /> },
   { n: "3", title: "The lockfile: pinned by default, rollback for free", body: <Lockfile /> },
   { n: "4", title: "Reconcile: two passes, one ownership rule", body: <Reconcile /> },
+  { n: "5", title: "Try to break it", body: <BreakIt /> },
 ];
 
 export function HowItWorks() {
