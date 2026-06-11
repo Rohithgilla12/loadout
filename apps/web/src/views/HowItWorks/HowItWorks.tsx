@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ReactNode } from "react";
 
-interface SectionDef {
+export interface SectionDef {
   n: string;
   title: string;
   body: ReactNode;
@@ -21,13 +21,14 @@ export function HowItWorks() {
     <div className="min-h-screen">
       <header className="max-w-3xl mx-auto px-6 py-5 flex items-center justify-between">
         <a href="/" className="flex items-baseline gap-2">
-          <span className="w-3 h-3 bg-accent rounded-[3px] translate-y-px" />
+          <span className="w-3 h-3 bg-accent rounded-[3px] translate-y-px" aria-hidden="true" />
           <span className="font-bold tracking-tight text-[17px]">Loadout</span>
         </a>
-        <nav className="flex items-center gap-5 text-[13.5px]">
+        <nav aria-label="Main navigation" className="flex items-center gap-5 text-[13.5px]">
           <a href="/#share" className="text-ink-soft hover:text-ink">Share a loadout</a>
           <a
             href="https://github.com/Rohithgilla12/loadout"
+            aria-label="Star Loadout on GitHub"
             className="border border-line-strong rounded px-3 py-1 hover:border-ink-faint font-medium"
           >
             ★ Star on GitHub
@@ -38,9 +39,9 @@ export function HowItWorks() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 blueprint" aria-hidden />
         <div className="relative max-w-3xl mx-auto px-6 pt-14 pb-16">
-          <div className="rise-in font-mono text-[12px] text-accent-deep tracking-wide mb-4">
+          <time dateTime="2026-06" className="rise-in font-mono text-[12px] text-accent-deep tracking-wide mb-4 block">
             ENGINEERING · JUNE 2026
-          </div>
+          </time>
           <h1 className="rise-in rise-in-1 text-[clamp(2rem,4.5vw,3rem)] leading-[1.06] font-bold tracking-[-0.03em]">
             How Loadout works
           </h1>
