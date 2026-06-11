@@ -53,18 +53,19 @@ export function StoreInstall() {
           <div className="font-mono text-[11px] text-ink-faint">@ 9b1f3c2</div>
           <button
             onClick={() => setStage(stage === 0 ? 1 : 2)}
+            aria-disabled={stage === 2}
             className="mt-3 w-full bg-accent hover:bg-accent-deep text-paper-raised font-semibold px-3 py-1.5 rounded text-[12.5px] transition-colors"
           >
             {stage === 0 ? "Install" : "Install again"}
           </button>
           {stage === 2 && (
-            <div className="rise-in mt-2 text-[11.5px] font-mono text-ok" role="status">
+            <div className="rise-in mt-2 text-[11.5px] font-mono text-ok" role="status" aria-live="polite">
               already exists — 0 bytes copied
             </div>
           )}
         </div>
 
-        <div className="border border-line rounded-lg bg-paper-raised overflow-hidden">
+        <div className="border border-line rounded-lg bg-paper-raised overflow-hidden" role="region" aria-label="Store directory tree">
           <div className="px-3 py-1.5 border-b border-line font-mono text-[11.5px] text-ink-faint">
             ~/.loadout/store/
           </div>
