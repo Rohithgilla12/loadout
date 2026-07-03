@@ -6,25 +6,39 @@ use crate::store;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-/// True if `entry_path` is a symlink Loadout owns (its target resolves into the store).
-fn is_loadout_owned(entry_path: &Path) -> bool {
-    let Ok(meta) = fs::symlink_metadata(entry_path) else {
-        return false;
-    };
-    if !meta.file_type().is_symlink() {
-        return false;
+/// Extracts the store target path if `entry_path` is owned by Loadout (symlink or copy-mode).
+fn get_loadout_target(entry_path: &Path) -> Option<PathBuf> {
+    if let Ok(meta) = fs::symlink_metadata(entry_path) {
+        if meta.file_type().is_symlink() {
+            if let Ok(target) = fs::read_link(entry_path) {
+                let absolute = if target.is_absolute() {
+                    target
+                } else {
+                    entry_path.parent().map(|p| p.join(&target)).unwrap_or(target)
+                };
+                if normalize(&absolute).starts_with(normalize(&state::store_dir())) {
+                    return Some(absolute);
+                }
+            }
+        }
     }
-    let Ok(target) = fs::read_link(entry_path) else {
-        return false;
-    };
-    let absolute = if target.is_absolute() {
-        target
-    } else {
-        entry_path.parent().map(|p| p.join(&target)).unwrap_or(target)
-    };
-    // Compare lexically against the store root; the target may be a broken
-    // link (store pruned), which we still own and must be able to clean up.
-    normalize(&absolute).starts_with(normalize(&state::store_dir()))
+    if entry_path.is_dir() {
+        let marker = entry_path.join(".loadout-managed");
+        if marker.is_file() {
+            if let Ok(target_str) = fs::read_to_string(&marker) {
+                let target = PathBuf::from(target_str);
+                if normalize(&target).starts_with(normalize(&state::store_dir())) {
+                    return Some(target);
+                }
+            }
+        }
+    }
+    None
+}
+
+/// True if `entry_path` is a symlink or copy-mode directory Loadout owns (its target resolves into the store).
+fn is_loadout_owned(entry_path: &Path) -> bool {
+    get_loadout_target(entry_path).is_some()
 }
 
 /// Lexical path normalization (no fs access, works on broken links).
@@ -50,9 +64,17 @@ fn make_symlink(target: &Path, link: &Path) -> Result<()> {
 
 #[cfg(windows)]
 fn make_symlink(target: &Path, link: &Path) -> Result<()> {
-    // Windows: directory symlink needs Developer Mode; junction fallback is a
-    // post-v1 concern (documented). Try the symlink and surface the error.
-    std::os::windows::fs::symlink_dir(target, link)?;
+    // 1. Try directory symlink (needs Developer Mode or elevation)
+    if std::os::windows::fs::symlink_dir(target, link).is_ok() {
+        return Ok(());
+    }
+    // 2. Try NTFS Junction (no elevation needed)
+    if junction::create(target, link).is_ok() {
+        return Ok(());
+    }
+    // 3. Fallback to copy-mode
+    crate::store::copy_dir(target, link)?;
+    fs::write(link.join(".loadout-managed"), target.to_string_lossy().to_string())?;
     Ok(())
 }
 
@@ -74,11 +96,15 @@ fn reconcile_dir(
         }
         let name = entry.file_name().to_string_lossy().to_string();
         let wanted = targets.iter().find(|(n, _)| *n == name);
-        let current_target = fs::read_link(&path).ok();
+        let current_target = get_loadout_target(&path);
         match wanted {
             Some((_, store_path)) if current_target.as_deref() == Some(store_path.as_path()) => {}
             _ => {
-                fs::remove_file(&path)?;
+                if fs::symlink_metadata(&path).map(|m| m.file_type().is_symlink()).unwrap_or(false) {
+                    fs::remove_file(&path)?;
+                } else {
+                    fs::remove_dir_all(&path)?;
+                }
                 if wanted.is_none() {
                     summary.removed += 1;
                 }

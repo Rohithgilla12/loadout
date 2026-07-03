@@ -1,6 +1,6 @@
 [package]
 name = "loadout-core"
-version = "0.4.0"
+version = "0.5.0"
 description = "Loadout engine — profiles, content-addressed skill store, symlink reconciliation"
 authors = ["Rohith Gilla"]
 license = "MIT"
@@ -22,3 +22,6 @@ hex = "0.4"
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "gzip", "brotli"], default-features = false }
 tempfile = "3"
+
+[target.'cfg(windows)'.dependencies]
+junction = "1"
