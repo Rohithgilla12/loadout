@@ -9,6 +9,7 @@ import { HowItWorks } from "./views/HowItWorks/HowItWorks";
 import { Landing } from "./views/Landing";
 import { SharePage } from "./views/SharePage";
 import { Builder } from "./views/Builder";
+import { Gallery } from "./views/Gallery";
 
 export default function App() {
   const [shared, setShared] = useState<SharedLoadout | null>(() => readShareFromHash());
@@ -25,6 +26,7 @@ export default function App() {
   }, []);
 
   if (location.pathname === "/how-it-works") return <HowItWorks />;
+  if (location.pathname === "/gallery") return <Gallery />;
   if (slug) return <ShortShare slug={slug} />;
   if (shared) return <SharePage loadout={shared} />;
   if (building) return <Builder />;

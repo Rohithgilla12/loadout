@@ -168,7 +168,38 @@ export default {
         "cache-control": "public, max-age=31536000, immutable",
       });
     }
+    if (url.pathname === "/api/gallery" && request.method === "GET") {
+      const indexJson = await env.SHARES.get("gallery:index");
+      const slugs: string[] = indexJson ? JSON.parse(indexJson) : [];
+      const loadouts = await Promise.all(
+        slugs.map(async (slug) => {
+          const stored = await env.SHARES.get(`s:${slug}`);
+          if (!stored) return null;
+          return { slug, ...JSON.parse(stored) };
+        })
+      );
+      return json(loadouts.filter(Boolean), 200, {
+        "cache-control": "public, max-age=60",
+      });
+    }
 
+    if (url.pathname === "/api/gallery" && request.method === "POST") {
+      if (!(await isAdmin(request))) {
+        return json({ error: "unauthorized" }, 403);
+      }
+      const text = await request.text();
+      let body: unknown;
+      try {
+        body = JSON.parse(text);
+      } catch {
+        return json({ error: "invalid JSON" }, 400);
+      }
+      if (!Array.isArray(body) || !body.every((s) => typeof s === "string")) {
+        return json({ error: "expected array of string slugs" }, 400);
+      }
+      await env.SHARES.put("gallery:index", JSON.stringify(body));
+      return json({ success: true, slugs: body }, 200);
+    }
     if (url.pathname.startsWith("/api/")) {
       return json({ error: "not found" }, 404);
     }
