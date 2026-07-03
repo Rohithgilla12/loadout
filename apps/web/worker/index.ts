@@ -21,7 +21,7 @@ const CUSTOM_SLUG_RE = /^[a-z0-9][a-z0-9-]{1,30}[a-z0-9]$/;
 const RESERVED = new Set([
   "typescript", "ts", "javascript", "js", "dev", "go", "golang", "rust", "python", "py",
   "react", "next", "nextjs", "node", "frontend", "backend", "fullstack", "ai", "ml",
-  "claude", "claude-code", "cursor", "codex", "copilot", "web", "design", "devops",
+  "claude", "claude-code", "cursor", "codex", "copilot", "gemini", "web", "design", "devops",
   "infra", "data", "mobile", "ios", "android", "base", "work", "everything", "default",
   "admin", "api", "app", "www", "share", "loadout", "rohith", "gilla", "premium", "pro",
   "team", "official", "vibe", "vibes", "starter", "minimal",

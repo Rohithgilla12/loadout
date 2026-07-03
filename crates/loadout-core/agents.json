@@ -14,6 +14,20 @@
     "detect_dir": ".cursor"
   },
   {
+    "id": "gemini",
+    "display_name": "Gemini",
+    "global_skills_dir": ".gemini/skills",
+    "project_skills_dir": ".gemini/skills",
+    "detect_dir": ".gemini"
+  },
+  {
+    "id": "codex",
+    "display_name": "Codex CLI",
+    "global_skills_dir": ".codex/skills",
+    "project_skills_dir": ".codex/skills",
+    "detect_dir": ".codex"
+  },
+  {
     "id": "agents-standard",
     "display_name": "Codex / Copilot / OpenCode (.agents)",
     "global_skills_dir": ".agents/skills",

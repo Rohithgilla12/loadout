@@ -108,7 +108,14 @@ pub fn shallow_fetch(url: &str, rev: Option<&str>) -> Result<(tempfile::TempDir,
 
 /// Search locations from the skills CLI spec, in priority order, then a
 /// bounded recursive fallback.
-const SEARCH_ROOTS: &[&str] = &["skills", ".claude/skills", ".agents/skills", "."];
+const SEARCH_ROOTS: &[&str] = &[
+    "skills",
+    ".claude/skills",
+    ".gemini/skills",
+    ".codex/skills",
+    ".agents/skills",
+    ".",
+];
 
 /// Find every skill (dir containing SKILL.md) in a checked-out repo.
 pub fn discover_skills(repo: &Path) -> Result<Vec<DiscoveredSkill>> {
